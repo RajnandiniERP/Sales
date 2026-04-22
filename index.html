@@ -149,7 +149,8 @@
       border-radius: var(--radius);
       padding: 18px;
       box-shadow: var(--shadow);
-      min-height: 380px;
+      height: 420px;
+      overflow: hidden;
     }
 
     .chart-wrap h3, .table-wrap h3 {
@@ -211,6 +212,42 @@
       font-weight: 700;
     }
 
+    .progress-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: var(--shadow);
+      min-width: 260px;
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #60a5fa, #2563eb);
+      border-radius: 999px;
+      transition: width 0.35s ease;
+    }
+
     .footer-note {
       margin-top: 16px;
       color: var(--muted);
@@ -238,7 +275,17 @@
         <h1>Sales Dashboard</h1>
         <p>Live data from Google Sheets CSV · auto-refreshes on each page load</p>
       </div>
-      <div class="pill" id="lastUpdated">Loading data...</div>
+      <div style="min-width: 260px;">
+        <div class="progress-card" id="loadingCard">
+          <div class="progress-head">
+            <span id="progressText">Loading data... 0%</span>
+            <span id="progressValue">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="toolbar">
@@ -381,7 +428,10 @@
       topSkuTable: document.getElementById('topSkuTable'),
       topUniverseTable: document.getElementById('topUniverseTable'),
       detailTable: document.getElementById('detailTable'),
-      lastUpdated: document.getElementById('lastUpdated')
+      progressText: document.getElementById('progressText'),
+      progressValue: document.getElementById('progressValue'),
+      progressFill: document.getElementById('progressFill'),
+      loadingCard: document.getElementById('loadingCard')
     };
 
     function normalizeRow(row) {
@@ -583,21 +633,36 @@
       fillSelect(els.skuFilter, uniqueValues(data, 'channelSku'));
     }
 
+    function setProgress(value, label) {
+      const safeValue = Math.max(0, Math.min(100, value));
+      els.progressFill.style.width = `${safeValue}%`;
+      els.progressValue.textContent = `${safeValue}%`;
+      els.progressText.textContent = label || `Loading data... ${safeValue}%`;
+    }
+
     function loadData() {
+      setProgress(10, 'Connecting to Google Sheet... 10%');
+
       Papa.parse(CSV_URL, {
         download: true,
         header: true,
         skipEmptyLines: true,
+        beforeFirstChunk: (chunk) => {
+          setProgress(35, 'Downloading CSV... 35%');
+          return chunk;
+        },
         complete: (results) => {
+          setProgress(70, 'Processing records... 70%');
           rawData = results.data.map(normalizeRow).filter(row => row.channel || row.channelSku || row.universeSku || row.sale);
+          setProgress(90, 'Building dashboard... 90%');
           initFilters(rawData);
           bindEvents();
           applyFilters();
-          els.lastUpdated.textContent = `Last loaded: ${new Date().toLocaleString('en-IN')}`;
+          setProgress(100, `Loaded successfully · ${new Date().toLocaleString('en-IN')}`);
         },
         error: (error) => {
           console.error(error);
-          els.lastUpdated.textContent = 'Failed to load data';
+          setProgress(100, 'Failed to load data');
           alert('Could not load CSV data. Please check your published Google Sheet link.');
         }
       });
