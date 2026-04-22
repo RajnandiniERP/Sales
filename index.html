@@ -303,7 +303,8 @@
       </div>
       <div class="field">
         <label for="skuFilter">Channel SKU</label>
-        <select id="skuFilter"><option value="">All</option></select>
+        <input id="skuFilter" list="skuOptions" type="text" placeholder="Search or select SKU" />
+        <datalist id="skuOptions"></datalist>
       </div>
       <div class="field full">
         <label for="searchInput">Search</label>
@@ -418,6 +419,7 @@
       yearFilter: document.getElementById('yearFilter'),
       channelFilter: document.getElementById('channelFilter'),
       skuFilter: document.getElementById('skuFilter'),
+      skuOptions: document.getElementById('skuOptions'),
       searchInput: document.getElementById('searchInput'),
       resetBtn: document.getElementById('resetBtn'),
       totalSales: document.getElementById('totalSales'),
@@ -471,6 +473,19 @@
         select.appendChild(option);
       });
       if (values.includes(current)) select.value = current;
+    }
+
+    function fillDatalist(listEl, values) {
+      const current = els.skuFilter.value;
+      listEl.innerHTML = '';
+      values.forEach(value => {
+        const option = document.createElement('option');
+        option.value = value;
+        listEl.appendChild(option);
+      });
+      if (!values.includes(current)) {
+        els.skuFilter.value = current;
+      }
     }
 
     function aggregate(data, key) {
@@ -591,14 +606,14 @@
       const month = els.monthFilter.value;
       const year = els.yearFilter.value;
       const channel = els.channelFilter.value;
-      const sku = els.skuFilter.value;
+      const sku = els.skuFilter.value.trim().toLowerCase();
       const search = els.searchInput.value.trim().toLowerCase();
 
       filteredData = rawData.filter(row => {
         const matchesMonth = !month || row.month === month;
         const matchesYear = !year || row.year === year;
         const matchesChannel = !channel || row.channel === channel;
-        const matchesSku = !sku || row.channelSku === sku;
+        const matchesSku = !sku || row.channelSku.toLowerCase().includes(sku);
         const haystack = `${row.channel} ${row.channelSku} ${row.universeSku} ${row.month} ${row.year}`.toLowerCase();
         const matchesSearch = !search || haystack.includes(search);
         return matchesMonth && matchesYear && matchesChannel && matchesSku && matchesSearch;
@@ -611,10 +626,11 @@
     }
 
     function bindEvents() {
-      [els.monthFilter, els.yearFilter, els.channelFilter, els.skuFilter].forEach(el => {
+      [els.monthFilter, els.yearFilter, els.channelFilter].forEach(el => {
         el.addEventListener('change', applyFilters);
       });
 
+      els.skuFilter.addEventListener('input', applyFilters);
       els.searchInput.addEventListener('input', applyFilters);
       els.resetBtn.addEventListener('click', () => {
         els.monthFilter.value = '';
@@ -630,7 +646,7 @@
       fillSelect(els.monthFilter, uniqueValues(data, 'month'));
       fillSelect(els.yearFilter, uniqueValues(data, 'year'));
       fillSelect(els.channelFilter, uniqueValues(data, 'channel'));
-      fillSelect(els.skuFilter, uniqueValues(data, 'channelSku'));
+      fillDatalist(els.skuOptions, uniqueValues(data, 'channelSku'));
     }
 
     function setProgress(value, label) {
