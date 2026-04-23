@@ -924,8 +924,8 @@
 
     function bindEvents() {
       document.getElementById('fetchBtn').addEventListener('click', () => {
-        setProgress(5, 'Re-fetching data... 5%');
-        loadData();
+        setProgress(5, 'Fetching data from Google Sheet... 5%');
+        setProgress(0, 'Click Fetch Data to load from Google Sheet');
       });
       [els.monthFilter, els.yearFilter, els.channelFilter].forEach(el => {
         el.addEventListener('change', applyFilters);
@@ -957,6 +957,24 @@
     }
 
     function loadData() {
+      if (monthChart) { monthChart.destroy(); monthChart = null; }
+      if (channelChart) { channelChart.destroy(); channelChart = null; }
+      rawData = [];
+      filteredData = [];
+      els.totalSales.textContent = '0';
+      els.totalRows.textContent = '0';
+      els.uniqueSku.textContent = '0';
+      els.topChannel.textContent = '-';
+      els.topChannelSales.textContent = '0 sales';
+      els.recordBadge.textContent = '0';
+      els.topSkuTable.innerHTML = '<tr><td colspan="3">No data loaded</td></tr>';
+      els.topUniverseTable.innerHTML = '<tr><td colspan="3">No data loaded</td></tr>';
+      els.detailTable.innerHTML = '<tr><td colspan="7">No data loaded</td></tr>';
+      els.monthFilter.innerHTML = '<option value="">All</option>';
+      els.yearFilter.innerHTML = '<option value="">All</option>';
+      els.channelFilter.innerHTML = '<option value="">All</option>';
+      els.skuFilter.value = '';
+      els.skuOptions.innerHTML = '';
       setProgress(10, 'Connecting to Google Sheet... 10%');
 
       Papa.parse(CSV_URL, {
