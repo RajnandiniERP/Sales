@@ -60,19 +60,12 @@
       text-align: center;
     }
 
-    .brand-mark {
-      width: 56px;
-      height: 56px;
+    .logo-img {
+      width: 110px;
+      height: 110px;
+      object-fit: contain;
+      display: block;
       margin: 0 auto 0.8rem;
-      border-radius: 12px;
-      background: var(--gold);
-      color: var(--teal-dark);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: "Cormorant Garamond", serif;
-      font-size: 1.8rem;
-      font-weight: 700;
     }
 
     .sidebar-logo h2 {
@@ -504,7 +497,7 @@
 <body>
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="brand-mark">R</div>
+      <img class="logo-img" src="data:image/png;base64,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" alt="Rajnandini logo" />
       <h2>Rajnandini</h2>
       <div class="sidebar-tagline">Sales ERP Dashboard</div>
     </div>
@@ -524,13 +517,8 @@
     <div class="nav-item"><span>🏬</span> Channel Summary</div>
     <div class="nav-item"><span>📅</span> Monthly Trends</div>
 
-    <div class="sec-label">Live Source</div>
-    <div class="nav-item"><span>🔗</span> Google Sheet CSV</div>
-    <div class="nav-item"><span>🌐</span> GitHub Pages</div>
-
     <div class="sidebar-footer">
-      Rajnandini Fashion India Ltd<br>
-      Live sales dashboard theme
+      Rajnandini Fashion India Ltd
     </div>
   </aside>
 
@@ -539,8 +527,6 @@
       <div class="topbar-title">Sales Dashboard</div>
       <div class="topbar-meta">
         <button class="btn btn-primary" id="fetchBtn">Fetch Data</button>
-        <span class="meta-pill">Live CSV Connected</span>
-        <span class="meta-pill">ERP Style Theme</span>
       </div>
     </div>
 
@@ -548,7 +534,34 @@
       <div class="page-head">
         <div>
           <h1>Sales Overview</h1>
-          <p>Live data from Google Sheets CSV · auto-refreshes whenever the sheet updates</p>
+          <p>Live data from Google Sheets CSV</p>
+        </div>
+
+        <div class="progress-card" id="loadingCard">
+          <div class="progress-head">
+            <span id="progressText">Loading data... 0%</span>
+            <span id="progressValue">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body" style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; padding-top:1rem; padding-bottom:1rem;">
+          <div>
+            <div class="card-head-title" style="margin-bottom:0.35rem;">Demand Sensing</div>
+            <div style="color: var(--muted); font-size: 0.9rem;">AI-powered insights to identify high demand opportunities and trends.</div>
+          </div>
+          <button class="btn btn-primary" type="button">View Insights</button>
+        </div>
+      </div>
+
+      <div class="page-head">
+        <div>
+          <h1>Sales Overview</h1>
+          <p>Live data from Google Sheets CSV</p>
         </div>
 
         <div class="progress-card" id="loadingCard">
