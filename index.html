@@ -8,540 +8,26 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap');
-
-    :root {
-      --teal: #0d5c4a;
-      --teal-dark: #094035;
-      --teal-mid: #0f6b56;
-      --teal-light: #e8f4f0;
-      --gold: #c9a84c;
-      --gold-light: #f0e4c0;
-      --white: #ffffff;
-      --off-white: #f7f5f0;
-      --text: #1a1a1a;
-      --muted: #6b7c75;
-      --border: #e0dbd0;
-      --green: #2d7a5f;
-      --red: #c0392b;
-      --amber: #c47a1a;
-      --sidebar-w: 260px;
-      --shadow: 0 18px 40px rgba(9, 64, 53, 0.08);
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: "DM Sans", sans-serif;
-      background: var(--off-white);
-      color: var(--text);
-      display: flex;
-      min-height: 100vh;
-    }
-
-    .sidebar {
-      width: var(--sidebar-w);
-      background: var(--teal-dark);
-      min-height: 100vh;
-      position: fixed;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      display: flex;
-      flex-direction: column;
-      border-right: 1px solid rgba(201, 168, 76, 0.18);
-      z-index: 20;
-    }
-
-    .sidebar-logo {
-      padding: 1.6rem 1.2rem 1.2rem;
-      border-bottom: 1px solid rgba(201, 168, 76, 0.18);
-      text-align: center;
-    }
-
-    .logo-img {
-      width: 110px;
-      height: 110px;
-      object-fit: contain;
-      display: block;
-      margin: 0 auto 0.8rem;
-    }
-
-    .brand-mark {
-      width: 76px;
-      height: 76px;
-      margin: 0 auto 0.8rem;
-      border-radius: 16px;
-      background: var(--gold);
-      color: var(--teal-dark);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: "Cormorant Garamond", serif;
-      font-size: 2.2rem;
-      font-weight: 700;
-    }
-
-    .sidebar-logo h2 {
-      margin: 0;
-      color: var(--white);
-      font-family: "Cormorant Garamond", serif;
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-
-    .sidebar-tagline {
-      margin-top: 0.35rem;
-      color: var(--gold);
-      font-size: 0.68rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-    }
-
-    .sidebar-user {
-      padding: 0.9rem 1.2rem;
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-      border-bottom: 1px solid rgba(201, 168, 76, 0.12);
-    }
-
-    .user-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--gold);
-      color: var(--teal-dark);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-
-    .user-info .uname {
-      color: var(--white);
-      font-size: 0.82rem;
-      font-weight: 600;
-    }
-
-    .user-info .urole {
-      color: rgba(201, 168, 76, 0.78);
-      font-size: 0.64rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .sec-label {
-      padding: 1.1rem 1.2rem 0.4rem;
-      color: rgba(201, 168, 76, 0.5);
-      font-size: 0.62rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-
-    .nav-item {
-      padding: 0.76rem 1.2rem;
-      color: rgba(255,255,255,0.68);
-      border-left: 3px solid transparent;
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-      font-size: 0.86rem;
-      cursor: pointer;
-    }
-
-    .nav-item.active {
-      color: var(--gold);
-      background: rgba(201, 168, 76, 0.12);
-      border-left-color: var(--gold);
-      font-weight: 700;
-    }
-
-    .nav-badge {
-      margin-left: auto;
-      background: var(--gold);
-      color: var(--teal-dark);
-      border-radius: 999px;
-      padding: 2px 8px;
-      font-size: 0.65rem;
-      font-weight: 700;
-    }
-
-    .sidebar-footer {
-      margin-top: auto;
-      padding: 1rem 1.2rem;
-      border-top: 1px solid rgba(201, 168, 76, 0.12);
-      color: rgba(255,255,255,0.38);
-      font-size: 0.68rem;
-      line-height: 1.8;
-      text-align: center;
-    }
-
-    .main {
-      margin-left: var(--sidebar-w);
-      flex: 1;
-      min-width: 0;
-    }
-
-    .topbar {
-      background: var(--white);
-      border-bottom: 1px solid var(--border);
-      padding: 0.95rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .topbar-title {
-      font-family: "Cormorant Garamond", serif;
-      font-size: 1.5rem;
-      color: var(--teal);
-      font-weight: 700;
-    }
-
-    .content {
-      padding: 1.6rem 2rem 2rem;
-    }
-
-    .page-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 1rem;
-      margin-bottom: 1.2rem;
-      flex-wrap: wrap;
-    }
-
-    .page-head h1 {
-      margin: 0;
-      font-family: "Cormorant Garamond", serif;
-      font-size: 2.4rem;
-      color: var(--teal-dark);
-    }
-
-    .page-head p {
-      margin: 0.28rem 0 0;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-
-    .progress-card {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 0.8rem 1rem;
-      min-width: 280px;
-      box-shadow: var(--shadow);
-    }
-
-    .progress-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 0.8rem;
-      margin-bottom: 0.55rem;
-      font-size: 0.74rem;
-      font-weight: 700;
-      color: var(--teal);
-    }
-
-    .progress-bar {
-      width: 100%;
-      height: 8px;
-      background: #e9e4d8;
-      border-radius: 999px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--gold), var(--teal));
-      transition: width 0.35s ease;
-    }
-
-    .card {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-      margin-bottom: 1.3rem;
-    }
-
-    .card-head {
-      padding: 0.95rem 1.25rem;
-      background: #faf8f4;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .card-head-title {
-      font-size: 0.8rem;
-      color: var(--teal);
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .card-body {
-      padding: 1.25rem;
-    }
-
-    .toolbar-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(150px, 1fr));
-      gap: 1rem;
-      align-items: end;
-    }
-
-    .form-field label {
-      display: block;
-      margin-bottom: 0.42rem;
-      font-size: 0.68rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .form-field input,
-    .form-field select,
-    .form-field button {
-      width: 100%;
-      padding: 0.72rem 0.9rem;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--white);
-      font-family: "DM Sans", sans-serif;
-      font-size: 0.86rem;
-      outline: none;
-    }
-
-    .form-field input:focus,
-    .form-field select:focus {
-      border-color: var(--teal);
-      box-shadow: 0 0 0 3px rgba(13, 92, 74, 0.08);
-    }
-
-    .btn {
-      border: none;
-      border-radius: 8px;
-      padding: 0.78rem 1rem;
-      font-size: 0.82rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .btn-primary {
-      background: var(--teal);
-      color: var(--white);
-    }
-
-    .btn-primary:hover { background: var(--teal-mid); }
-
-    .btn-gold {
-      background: var(--gold-light);
-      color: var(--teal-dark);
-      border: 1px solid #e7d8ad;
-    }
-
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-      margin-bottom: 1.3rem;
-    }
-
-    .stat-card {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      box-shadow: var(--shadow);
-      padding: 1.2rem 1.25rem;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .stat-card::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-    }
-
-    .s-green::after { background: var(--green); }
-    .s-red::after { background: var(--red); }
-    .s-amber::after { background: var(--amber); }
-    .s-teal::after { background: var(--teal); }
-
-    .stat-label {
-      font-size: 0.68rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-val {
-      font-family: "Cormorant Garamond", serif;
-      font-size: 2.2rem;
-      line-height: 1;
-      font-weight: 700;
-      color: var(--teal-dark);
-      margin-bottom: 0.3rem;
-    }
-
-    .stat-sub {
-      font-size: 0.74rem;
-      color: var(--muted);
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1.15fr 1fr;
-      gap: 1.3rem;
-      margin-bottom: 1.3rem;
-    }
-
-    .chart-box {
-      height: 340px;
-      position: relative;
-    }
-
-    .table-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.3rem;
-      margin-bottom: 1.3rem;
-    }
-
-    .table-wrap,
-    .demand-table-wrap {
-      overflow: auto;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      max-height: 520px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-    }
-
-    thead tr { background: var(--teal); }
-
-    thead th {
-      color: var(--white);
-      text-align: left;
-      padding: 0.72rem 0.9rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      white-space: nowrap;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-
-    tbody tr:nth-child(even) { background: #faf8f4; }
-    tbody tr:hover { background: var(--teal-light); }
-
-    tbody td {
-      padding: 0.62rem 0.9rem;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-
-    tbody tr:last-child td { border-bottom: none; }
-
-    .footer-note {
-      margin-top: 0.9rem;
-      color: var(--muted);
-      font-size: 0.74rem;
-    }
-
-    .tab-row {
-      display: flex;
-      gap: 0.7rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .tab-btn {
-      border: 1px solid var(--border);
-      background: var(--white);
-      color: var(--teal-dark);
-      padding: 0.72rem 1rem;
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .tab-btn.active {
-      background: var(--teal);
-      color: var(--white);
-      border-color: var(--teal);
-    }
-
-    .status-note {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-bottom: 0.8rem;
-    }
-
-    .demand-toolbar {
-      display: grid;
-      grid-template-columns: 180px 180px 1fr 180px;
-      gap: 0.9rem;
-      align-items: end;
-      margin-bottom: 1rem;
-    }
-
-    .sortable {
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .sortable::after {
-      content: ' ↕';
-      opacity: 0.65;
-      font-size: 0.72rem;
-    }
-
-    @media (max-width: 1200px) {
-      .toolbar-grid { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
-      .stats-row { grid-template-columns: repeat(2, 1fr); }
-      .grid-2, .table-grid { grid-template-columns: 1fr; }
-      .demand-toolbar { grid-template-columns: 1fr 1fr; }
-    }
-
-    @media (max-width: 860px) {
-      .sidebar {
-        position: static;
-        width: 100%;
-        min-height: auto;
-      }
-      body { display: block; }
-      .main { margin-left: 0; }
-      .content, .topbar { padding-left: 1rem; padding-right: 1rem; }
-      .toolbar-grid, .demand-toolbar { grid-template-columns: 1fr; }
-      .stats-row { grid-template-columns: 1fr; }
-      .page-head h1 { font-size: 2rem; }
-    }
+    :root{--teal:#0d5c4a;--teal-dark:#094035;--teal-mid:#0f6b56;--teal-light:#e8f4f0;--gold:#c9a84c;--gold-light:#f0e4c0;--white:#fff;--off-white:#f7f5f0;--text:#1a1a1a;--muted:#6b7c75;--border:#e0dbd0;--green:#2d7a5f;--red:#c0392b;--amber:#c47a1a;--sidebar-w:260px;--shadow:0 18px 40px rgba(9,64,53,.08)}
+    *{box-sizing:border-box} body{margin:0;font-family:"DM Sans",sans-serif;background:var(--off-white);color:var(--text);display:flex;min-height:100vh}
+    .sidebar{width:var(--sidebar-w);background:var(--teal-dark);min-height:100vh;position:fixed;left:0;top:0;bottom:0;display:flex;flex-direction:column;border-right:1px solid rgba(201,168,76,.18);z-index:20}
+    .sidebar-logo{padding:1.6rem 1.2rem 1.2rem;border-bottom:1px solid rgba(201,168,76,.18);text-align:center}
+    .logo-img{width:110px;height:110px;object-fit:contain;display:block;margin:0 auto .8rem}.brand-mark{width:76px;height:76px;margin:0 auto .8rem;border-radius:16px;background:var(--gold);color:var(--teal-dark);display:flex;align-items:center;justify-content:center;font-family:"Cormorant Garamond",serif;font-size:2.2rem;font-weight:700}
+    .sidebar-logo h2{margin:0;color:#fff;font-family:"Cormorant Garamond",serif;font-size:1.5rem;font-weight:700}.sidebar-tagline{margin-top:.35rem;color:var(--gold);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase}
+    .sidebar-user{padding:.9rem 1.2rem;display:flex;align-items:center;gap:.7rem;border-bottom:1px solid rgba(201,168,76,.12)}.user-avatar{width:36px;height:36px;border-radius:50%;background:var(--gold);color:var(--teal-dark);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}.user-info .uname{color:#fff;font-size:.82rem;font-weight:600}.user-info .urole{color:rgba(201,168,76,.78);font-size:.64rem;text-transform:uppercase;letter-spacing:.08em}
+    .sec-label{padding:1.1rem 1.2rem .4rem;color:rgba(201,168,76,.5);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700}.nav-item{padding:.76rem 1.2rem;color:rgba(255,255,255,.68);border-left:3px solid transparent;display:flex;align-items:center;gap:.7rem;font-size:.86rem;cursor:pointer}.nav-item.active{color:var(--gold);background:rgba(201,168,76,.12);border-left-color:var(--gold);font-weight:700}.nav-badge{margin-left:auto;background:var(--gold);color:var(--teal-dark);border-radius:999px;padding:2px 8px;font-size:.65rem;font-weight:700}.sidebar-footer{margin-top:auto;padding:1rem 1.2rem;border-top:1px solid rgba(201,168,76,.12);color:rgba(255,255,255,.38);font-size:.68rem;line-height:1.8;text-align:center}
+    .main{margin-left:var(--sidebar-w);flex:1;min-width:0}.topbar{background:#fff;border-bottom:1px solid var(--border);padding:.95rem 2rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;position:sticky;top:0;z-index:10}.topbar-title{font-family:"Cormorant Garamond",serif;font-size:1.5rem;color:var(--teal);font-weight:700}.content{padding:1.6rem 2rem 2rem}
+    .page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap}.page-head h1{margin:0;font-family:"Cormorant Garamond",serif;font-size:2.4rem;color:var(--teal-dark)}.page-head p{margin:.28rem 0 0;color:var(--muted);font-size:.92rem}
+    .progress-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:.8rem 1rem;min-width:280px;box-shadow:var(--shadow)}.progress-head{display:flex;justify-content:space-between;gap:.8rem;margin-bottom:.55rem;font-size:.74rem;font-weight:700;color:var(--teal)}.progress-bar{width:100%;height:8px;background:#e9e4d8;border-radius:999px;overflow:hidden}.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--teal));transition:width .35s ease}
+    .card{background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:1.3rem}.card-head{padding:.95rem 1.25rem;background:#faf8f4;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}.card-head-title{font-size:.8rem;color:var(--teal);font-weight:700;letter-spacing:.08em;text-transform:uppercase}.card-body{padding:1.25rem}
+    .toolbar-grid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:1rem;align-items:end}.form-field label{display:block;margin-bottom:.42rem;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}.form-field input,.form-field select,.form-field button{width:100%;padding:.72rem .9rem;border:1px solid var(--border);border-radius:8px;background:#fff;font-family:"DM Sans",sans-serif;font-size:.86rem;outline:none}.form-field input:focus,.form-field select:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,92,74,.08)}
+    .btn{border:none;border-radius:8px;padding:.78rem 1rem;font-size:.82rem;font-weight:700;cursor:pointer}.btn-primary{background:var(--teal);color:#fff}.btn-primary:hover{background:var(--teal-mid)}.btn-gold{background:var(--gold-light);color:var(--teal-dark);border:1px solid #e7d8ad}
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.3rem}.stat-card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:1.2rem 1.25rem;position:relative;overflow:hidden}.stat-card::after{content:"";position:absolute;top:0;left:0;right:0;height:4px}.s-green::after{background:var(--green)}.s-red::after{background:var(--red)}.s-amber::after{background:var(--amber)}.s-teal::after{background:var(--teal)}.stat-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;margin-bottom:.5rem}.stat-val{font-family:"Cormorant Garamond",serif;font-size:2.2rem;line-height:1;font-weight:700;color:var(--teal-dark);margin-bottom:.3rem}.stat-sub{font-size:.74rem;color:var(--muted)}
+    .grid-2{display:grid;grid-template-columns:1.15fr 1fr;gap:1.3rem;margin-bottom:1.3rem}.chart-box{height:340px;position:relative}.table-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.3rem;margin-bottom:1.3rem}.table-wrap,.demand-table-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px;max-height:520px}
+    table{width:100%;border-collapse:collapse;font-size:.78rem} thead tr{background:var(--teal)} thead th{color:#fff;text-align:left;padding:.72rem .9rem;font-weight:600;letter-spacing:.04em;white-space:nowrap;position:sticky;top:0;z-index:1} tbody tr:nth-child(even){background:#faf8f4} tbody tr:hover{background:var(--teal-light)} tbody td{padding:.62rem .9rem;border-bottom:1px solid var(--border);white-space:nowrap} tbody tr:last-child td{border-bottom:none}
+    .footer-note{margin-top:.9rem;color:var(--muted);font-size:.74rem}.tab-row{display:flex;gap:.7rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center}.tab-btn{border:1px solid var(--border);background:#fff;color:var(--teal-dark);padding:.72rem 1rem;border-radius:8px;font-weight:700;cursor:pointer}.tab-btn.active{background:var(--teal);color:#fff;border-color:var(--teal)}.status-note{font-size:.8rem;color:var(--muted);margin-bottom:.8rem}.demand-toolbar{display:grid;grid-template-columns:180px 180px 1fr 180px;gap:.9rem;align-items:end;margin-bottom:1rem}.sortable{cursor:pointer;user-select:none}.sortable::after{content:' ↕';opacity:.65;font-size:.72rem}
+    @media (max-width:1200px){.toolbar-grid{grid-template-columns:repeat(3,minmax(150px,1fr))}.stats-row{grid-template-columns:repeat(2,1fr)}.grid-2,.table-grid{grid-template-columns:1fr}.demand-toolbar{grid-template-columns:1fr 1fr}}
+    @media (max-width:860px){.sidebar{position:static;width:100%;min-height:auto}body{display:block}.main{margin-left:0}.content,.topbar{padding-left:1rem;padding-right:1rem}.toolbar-grid,.demand-toolbar{grid-template-columns:1fr}.stats-row{grid-template-columns:1fr}.page-head h1{font-size:2rem}}
   </style>
 </head>
 <body>
@@ -552,15 +38,10 @@
       <h2>Rajnandini</h2>
       <div class="sidebar-tagline">Sales ERP Dashboard</div>
     </div>
-
     <div class="sidebar-user">
       <div class="user-avatar">A</div>
-      <div class="user-info">
-        <div class="uname">Admin</div>
-        <div class="urole">Dashboard View</div>
-      </div>
+      <div class="user-info"><div class="uname">Admin</div><div class="urole">Dashboard View</div></div>
     </div>
-
     <div class="sec-label">Dashboard</div>
     <div class="nav-item active" id="salesOverviewNav"><span>📊</span> Sales Overview <span class="nav-badge" id="recordBadge">0</span></div>
     <div class="nav-item" id="demandNav"><span>🧠</span> Demand Sensing <span class="nav-badge">NEW</span></div>
@@ -568,727 +49,110 @@
     <div class="nav-item"><span>📦</span> SKU Performance</div>
     <div class="nav-item"><span>🏬</span> Channel Summary</div>
     <div class="nav-item"><span>📅</span> Monthly Trends</div>
-
-    <div class="sidebar-footer">
-      Rajnandini Fashion India Ltd
-    </div>
+    <div class="sidebar-footer">Rajnandini Fashion India Ltd</div>
   </aside>
-
   <div class="main">
-    <div class="topbar">
-      <div class="topbar-title">Sales Dashboard</div>
-      <div>
-        <button class="btn btn-primary" id="fetchBtn">Fetch Data</button>
-      </div>
-    </div>
-
+    <div class="topbar"><div class="topbar-title">Sales Dashboard</div><div><button class="btn btn-primary" id="fetchBtn">Fetch Data</button></div></div>
     <div class="content">
-      <div id="sales-overview-section">
-        <div class="page-head">
-          <div>
-            <h1>Sales Overview</h1>
-            <p>Live data from Google Sheets CSV</p>
-          </div>
-          <div class="progress-card" id="loadingCard">
-            <div class="progress-head">
-              <span id="progressText">Click Fetch Data to load from Google Sheet</span>
-              <span id="progressValue">0%</span>
-            </div>
-            <div class="progress-bar">
-              <div class="progress-fill" id="progressFill"></div>
+      <div id="sales-page">
+        <div id="sales-overview-section">
+          <div class="page-head">
+            <div><h1>Sales Overview</h1><p>Live data from Google Sheets CSV</p></div>
+            <div class="progress-card" id="loadingCard">
+              <div class="progress-head"><span id="progressText">Click Fetch Data to load from Google Sheet</span><span id="progressValue">0%</span></div>
+              <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
             </div>
           </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <span class="card-head-title">Filters & Search</span>
+          <div class="card"><div class="card-head"><span class="card-head-title">Filters & Search</span></div><div class="card-body"><div class="toolbar-grid">
+            <div class="form-field"><label for="monthFilter">Month</label><select id="monthFilter"><option value="">All</option></select></div>
+            <div class="form-field"><label for="yearFilter">Year</label><select id="yearFilter"><option value="">All</option></select></div>
+            <div class="form-field"><label for="channelFilter">Channel</label><select id="channelFilter"><option value="">All</option></select></div>
+            <div class="form-field"><label for="skuFilter">Channel SKU</label><input id="skuFilter" list="skuOptions" type="text" placeholder="Search or select SKU" /><datalist id="skuOptions"></datalist></div>
+            <div class="form-field"><label for="searchInput">Search</label><input id="searchInput" type="text" placeholder="Search SKU, channel, universe SKU..." /></div>
+            <div class="form-field"><label>&nbsp;</label><button class="btn btn-gold" id="resetBtn" type="button">Reset Filters</button></div>
+          </div></div></div>
+          <div class="stats-row">
+            <div class="stat-card s-green"><div class="stat-label">Total Sales</div><div class="stat-val" id="totalSales">0</div><div class="stat-sub">Sum of SALE column</div></div>
+            <div class="stat-card s-red"><div class="stat-label">Rows / Orders</div><div class="stat-val" id="totalRows">0</div><div class="stat-sub">Filtered records</div></div>
+            <div class="stat-card s-amber"><div class="stat-label">Unique Channel SKU</div><div class="stat-val" id="uniqueSku">0</div><div class="stat-sub">Distinct Channel SKU count</div></div>
+            <div class="stat-card s-teal"><div class="stat-label">Top Channel</div><div class="stat-val" id="topChannel">-</div><div class="stat-sub" id="topChannelSales">0 sales</div></div>
           </div>
-          <div class="card-body">
-            <div class="toolbar-grid">
-              <div class="form-field">
-                <label for="monthFilter">Month</label>
-                <select id="monthFilter"><option value="">All</option></select>
-              </div>
-              <div class="form-field">
-                <label for="yearFilter">Year</label>
-                <select id="yearFilter"><option value="">All</option></select>
-              </div>
-              <div class="form-field">
-                <label for="channelFilter">Channel</label>
-                <select id="channelFilter"><option value="">All</option></select>
-              </div>
-              <div class="form-field">
-                <label for="skuFilter">Channel SKU</label>
-                <input id="skuFilter" list="skuOptions" type="text" placeholder="Search or select SKU" />
-                <datalist id="skuOptions"></datalist>
-              </div>
-              <div class="form-field">
-                <label for="searchInput">Search</label>
-                <input id="searchInput" type="text" placeholder="Search SKU, channel, universe SKU..." />
-              </div>
-              <div class="form-field">
-                <label>&nbsp;</label>
-                <button class="btn btn-gold" id="resetBtn" type="button">Reset Filters</button>
-              </div>
-            </div>
+          <div class="grid-2">
+            <div class="card"><div class="card-head"><span class="card-head-title">Monthly Sales Trend</span></div><div class="card-body"><div class="chart-box"><canvas id="monthChart"></canvas></div></div></div>
+            <div class="card"><div class="card-head"><span class="card-head-title">Channel Split</span></div><div class="card-body"><div class="chart-box"><canvas id="channelChart"></canvas></div></div></div>
           </div>
-        </div>
-
-        <div class="stats-row">
-          <div class="stat-card s-green">
-            <div class="stat-label">Total Sales</div>
-            <div class="stat-val" id="totalSales">0</div>
-            <div class="stat-sub">Sum of SALE column</div>
+          <div class="table-grid">
+            <div class="card"><div class="card-head"><span class="card-head-title">Top 10 Channel SKU</span></div><div class="card-body"><div class="table-wrap"><table><thead><tr><th>Rank</th><th>Channel SKU</th><th>Total Sales</th></tr></thead><tbody id="topSkuTable"></tbody></table></div></div></div>
+            <div class="card"><div class="card-head"><span class="card-head-title">Top 10 Universe SKU</span></div><div class="card-body"><div class="table-wrap"><table><thead><tr><th>Rank</th><th>Universe SKU</th><th>Total Sales</th></tr></thead><tbody id="topUniverseTable"></tbody></table></div></div></div>
           </div>
-          <div class="stat-card s-red">
-            <div class="stat-label">Rows / Orders</div>
-            <div class="stat-val" id="totalRows">0</div>
-            <div class="stat-sub">Filtered records</div>
-          </div>
-          <div class="stat-card s-amber">
-            <div class="stat-label">Unique Channel SKU</div>
-            <div class="stat-val" id="uniqueSku">0</div>
-            <div class="stat-sub">Distinct Channel SKU count</div>
-          </div>
-          <div class="stat-card s-teal">
-            <div class="stat-label">Top Channel</div>
-            <div class="stat-val" id="topChannel">-</div>
-            <div class="stat-sub" id="topChannelSales">0 sales</div>
-          </div>
-        </div>
-
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-head"><span class="card-head-title">Monthly Sales Trend</span></div>
-            <div class="card-body"><div class="chart-box"><canvas id="monthChart"></canvas></div></div>
-          </div>
-          <div class="card">
-            <div class="card-head"><span class="card-head-title">Channel Split</span></div>
-            <div class="card-body"><div class="chart-box"><canvas id="channelChart"></canvas></div></div>
-          </div>
-        </div>
-
-        <div class="table-grid">
-          <div class="card">
-            <div class="card-head"><span class="card-head-title">Top 10 Channel SKU</span></div>
-            <div class="card-body">
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr><th>Rank</th><th>Channel SKU</th><th>Total Sales</th></tr>
-                  </thead>
-                  <tbody id="topSkuTable"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head"><span class="card-head-title">Top 10 Universe SKU</span></div>
-            <div class="card-body">
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr><th>Rank</th><th>Universe SKU</th><th>Total Sales</th></tr>
-                  </thead>
-                  <tbody id="topUniverseTable"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><span class="card-head-title">Detailed Sales Report</span></div>
-          <div class="card-body">
-            <div class="table-wrap" style="max-height:460px;">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Month</th>
-                    <th>Year</th>
-                    <th>Date</th>
-                    <th>Master Channel</th>
-                    <th>Channel SKU</th>
-                    <th>Universe SKU</th>
-                    <th>Sale</th>
-                  </tr>
-                </thead>
-                <tbody id="detailTable"></tbody>
-              </table>
-            </div>
-            <div class="footer-note">This dashboard uses your published Google Sheet CSV and refreshes when you click Fetch Data.</div>
-          </div>
+          <div class="card"><div class="card-head"><span class="card-head-title">Detailed Sales Report</span></div><div class="card-body"><div class="table-wrap" style="max-height:460px;"><table><thead><tr><th>Month</th><th>Year</th><th>Date</th><th>Master Channel</th><th>Channel SKU</th><th>Universe SKU</th><th>Sale</th></tr></thead><tbody id="detailTable"></tbody></table></div><div class="footer-note">This dashboard uses your published Google Sheet CSV and refreshes when you click Fetch Data.</div></div></div>
         </div>
       </div>
-
-      <div class="card" id="demand-sensing-section">
-        <div class="card-head">
-          <span class="card-head-title">Demand Sensing Database</span>
-        </div>
-        <div class="card-body">
-          <div class="tab-row">
-            <button class="tab-btn active" id="parentTabBtn" type="button">Parent</button>
-            <button class="tab-btn" id="childTabBtn" type="button">Child</button>
-            <button class="btn btn-primary" id="fetchDemandBtn" type="button">Fetch Demand Data</button>
-          </div>
-
-          <div class="status-note" id="demandStatus">Click Fetch Demand Data to load merged Parent and Child sheets.</div>
-
-          <div class="demand-toolbar">
-            <div class="form-field">
-              <label for="demandTypeFilter">Data Type</label>
-              <select id="demandTypeFilter"><option value="">All</option></select>
+      <div id="demand-page" style="display:none;">
+        <div class="card" id="demand-sensing-section">
+          <div class="card-head"><span class="card-head-title">Demand Sensing Database</span></div>
+          <div class="card-body">
+            <div class="page-head" style="margin-bottom:1rem;">
+              <div><h1>Demand Sensing</h1><p>Merged Parent and Child sheets with heading-based dynamic columns</p></div>
+              <div class="progress-card">
+                <div class="progress-head"><span id="demandProgressText">Click Fetch Demand Data to load</span><span id="demandProgressValue">0%</span></div>
+                <div class="progress-bar"><div class="progress-fill" id="demandProgressFill"></div></div>
+                <div style="margin-top:.5rem;font-size:.72rem;color:var(--muted);font-weight:700;" id="demandLastUpdated">Last updated: —</div>
+              </div>
             </div>
-            <div class="form-field">
-              <label for="demandLocFilter">Location</label>
-              <select id="demandLocFilter"><option value="">All</option></select>
+            <div class="tab-row"><button class="tab-btn active" id="parentTabBtn" type="button">Parent</button><button class="tab-btn" id="childTabBtn" type="button">Child</button><button class="btn btn-primary" id="fetchDemandBtn" type="button">Fetch Demand Data</button></div>
+            <div class="status-note" id="demandStatus">Click Fetch Demand Data to load merged Parent and Child sheets.</div>
+            <div class="demand-toolbar">
+              <div class="form-field"><label for="demandTypeFilter">Data Type</label><select id="demandTypeFilter"><option value="">All</option></select></div>
+              <div class="form-field"><label for="demandLocFilter">Location</label><select id="demandLocFilter"><option value="">All</option></select></div>
+              <div class="form-field"><label for="demandSearch">Search</label><input id="demandSearch" type="text" placeholder="Search Master SKU, Parent SKU, Category..." /></div>
+              <div class="form-field"><label>&nbsp;</label><button class="btn btn-gold" id="demandResetBtn" type="button">Reset Demand Filters</button></div>
             </div>
-            <div class="form-field">
-              <label for="demandSearch">Search</label>
-              <input id="demandSearch" type="text" placeholder="Search Master SKU, Parent SKU, Category..." />
-            </div>
-            <div class="form-field">
-              <label>&nbsp;</label>
-              <button class="btn btn-gold" id="demandResetBtn" type="button">Reset Demand Filters</button>
-            </div>
-          </div>
-
-          <div class="demand-table-wrap">
-            <table>
-              <thead>
-                <tr id="demandTableHead"></tr>
-              </thead>
-              <tbody id="demandTableBody">
-                <tr><td style="padding:1rem;">No demand data loaded</td></tr>
-              </tbody>
-            </table>
+            <div class="demand-table-wrap"><table><thead><tr id="demandTableHead"></tr></thead><tbody id="demandTableBody"><tr><td style="padding:1rem;">No demand data loaded</td></tr></tbody></table></div>
           </div>
         </div>
       </div>
     </div>
   </div>
-
-  <script>
-    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQdHExOAA5aff9JEonyhNV0xaO-f-AbEb7TMyI76ZfbJ3AlEUGRhgJBvSGMSX-kUsTbHSqlBOZctcPD/pub?output=csv';
-
-    const DEMAND_SENSING_SOURCES = {
-      parentOpen: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUsvBi2P7UlPymqL_OH9z5sTY7zb7WTdaNFIAGkyla-TqW_GN7HI-5FV9d1fDJunXuGzVeOuJU8L_i/pub?gid=0&single=true&output=csv',
-      parentClosed: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUsvBi2P7UlPymqL_OH9z5sTY7zb7WTdaNFIAGkyla-TqW_GN7HI-5FV9d1fDJunXuGzVeOuJU8L_i/pub?gid=1638204067&single=true&output=csv',
-      childOpen: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUsvBi2P7UlPymqL_OH9z5sTY7zb7WTdaNFIAGkyla-TqW_GN7HI-5FV9d1fDJunXuGzVeOuJU8L_i/pub?gid=1722425886&single=true&output=csv',
-      childClosed: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUsvBi2P7UlPymqL_OH9z5sTY7zb7WTdaNFIAGkyla-TqW_GN7HI-5FV9d1fDJunXuGzVeOuJU8L_i/pub?gid=1753975323&single=true&output=csv'
-    };
-
-    const DEMAND_PRIORITY_COLUMNS = [
-      'Master SKU', 'Style ID / Parent SKU', 'Size', 'Category', 'Loc', 'ST CS', 'Wholesale Price',
-      'Catalog Name', 'Up Price', 'Uniware Stock', 'FBA', 'FBF', 'SJIT', 'Launch Date', '.',
-      'Manual Close / New', 'Child Remark', 'Parent Remark'
-    ];
-
-    let rawData = [];
-    let filteredData = [];
-    let monthChart = null;
-    let channelChart = null;
-    let salesEventsBound = false;
-    let demandEventsBound = false;
-
-    const demandState = {
-      activeTab: 'parent',
-      parentRows: [],
-      childRows: [],
-      sortColumn: '',
-      sortDirection: 'asc'
-    };
-
-    const els = {
-      monthFilter: document.getElementById('monthFilter'),
-      yearFilter: document.getElementById('yearFilter'),
-      channelFilter: document.getElementById('channelFilter'),
-      skuFilter: document.getElementById('skuFilter'),
-      skuOptions: document.getElementById('skuOptions'),
-      searchInput: document.getElementById('searchInput'),
-      resetBtn: document.getElementById('resetBtn'),
-      totalSales: document.getElementById('totalSales'),
-      totalRows: document.getElementById('totalRows'),
-      uniqueSku: document.getElementById('uniqueSku'),
-      topChannel: document.getElementById('topChannel'),
-      topChannelSales: document.getElementById('topChannelSales'),
-      topSkuTable: document.getElementById('topSkuTable'),
-      topUniverseTable: document.getElementById('topUniverseTable'),
-      detailTable: document.getElementById('detailTable'),
-      progressText: document.getElementById('progressText'),
-      progressValue: document.getElementById('progressValue'),
-      progressFill: document.getElementById('progressFill'),
-      recordBadge: document.getElementById('recordBadge'),
-      fetchBtn: document.getElementById('fetchBtn'),
-      salesOverviewNav: document.getElementById('salesOverviewNav'),
-      demandNav: document.getElementById('demandNav'),
-      parentTabBtn: document.getElementById('parentTabBtn'),
-      childTabBtn: document.getElementById('childTabBtn'),
-      fetchDemandBtn: document.getElementById('fetchDemandBtn'),
-      demandStatus: document.getElementById('demandStatus'),
-      demandTypeFilter: document.getElementById('demandTypeFilter'),
-      demandLocFilter: document.getElementById('demandLocFilter'),
-      demandSearch: document.getElementById('demandSearch'),
-      demandResetBtn: document.getElementById('demandResetBtn'),
-      demandTableHead: document.getElementById('demandTableHead'),
-      demandTableBody: document.getElementById('demandTableBody'),
-      salesOverviewSection: document.getElementById('sales-overview-section'),
-      demandSection: document.getElementById('demand-sensing-section')
-    };
-
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    function normalizeRow(row) {
-      const month = row.Month || row.MONTH || row.month || '';
-      const year = row.Year || row.YEAR || row.year || '';
-      const date = row.DATE || row.Date || row.date || '';
-      const sale = Number(row.SALE || row.Sale || row.sale || 0) || 0;
-      const channel = row['MASTER Channel Name'] || row['MASTER Channel'] || row['MASTER Channel Name '] || row['Master Channel Name'] || '';
-      const channelSku = row['Channel SKU'] || row['CHANNEL SKU'] || row['Channel Sku'] || '';
-      const universeSku = row['Uniwere Sku'] || row['Universe Sku'] || row['UNIVERSE SKU'] || row['Universe SKU'] || '';
-      const monthYear = row.MONTH || row['MONTH '] || '';
-
-      return {
-        month: String(month).trim(),
-        year: String(year).trim(),
-        date: String(date).trim(),
-        sale,
-        channel: String(channel).trim(),
-        channelSku: String(channelSku).trim(),
-        universeSku: String(universeSku).trim(),
-        monthYear: String(monthYear).trim(),
-        raw: row
-      };
-    }
-
-    function uniqueValues(data, key) {
-      return [...new Set(data.map(item => item[key]).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b)));
-    }
-
-    function fillSelect(select, values) {
-      const current = select.value;
-      select.innerHTML = '<option value="">All</option>';
-      values.forEach(value => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = value;
-        select.appendChild(option);
-      });
-      if (values.includes(current)) select.value = current;
-    }
-
-    function fillDatalist(listEl, values) {
-      const current = els.skuFilter.value;
-      listEl.innerHTML = '';
-      values.forEach(value => {
-        const option = document.createElement('option');
-        option.value = value;
-        listEl.appendChild(option);
-      });
-      if (!values.includes(current)) els.skuFilter.value = current;
-    }
-
-    function aggregate(data, key) {
-      return data.reduce((acc, row) => {
-        const group = row[key] || 'Unknown';
-        acc[group] = (acc[group] || 0) + row.sale;
-        return acc;
-      }, {});
-    }
-
-    function topItems(data, key, limit = 10) {
-      return Object.entries(aggregate(data, key)).sort((a, b) => b[1] - a[1]).slice(0, limit);
-    }
-
-    function formatNumber(value) {
-      return new Intl.NumberFormat('en-IN').format(value || 0);
-    }
-
-    function renderCards(data) {
-      const totalSales = data.reduce((sum, row) => sum + row.sale, 0);
-      const uniqueSku = new Set(data.map(row => row.channelSku).filter(Boolean)).size;
-      const channelTotals = topItems(data, 'channel', 1);
-      els.totalSales.textContent = formatNumber(totalSales);
-      els.totalRows.textContent = formatNumber(data.length);
-      els.uniqueSku.textContent = formatNumber(uniqueSku);
-      els.topChannel.textContent = channelTotals[0]?.[0] || '-';
-      els.topChannelSales.textContent = `${formatNumber(channelTotals[0]?.[1] || 0)} sales`;
-      els.recordBadge.textContent = formatNumber(data.length);
-    }
-
-    function renderTopTables(data) {
-      const topSku = topItems(data, 'channelSku');
-      const topUniverse = topItems(data, 'universeSku');
-      els.topSkuTable.innerHTML = topSku.map((item, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(item[0])}</td><td>${formatNumber(item[1])}</td></tr>`).join('') || '<tr><td colspan="3">No data found</td></tr>';
-      els.topUniverseTable.innerHTML = topUniverse.map((item, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(item[0])}</td><td>${formatNumber(item[1])}</td></tr>`).join('') || '<tr><td colspan="3">No data found</td></tr>';
-    }
-
-    function renderDetails(data) {
-      els.detailTable.innerHTML = data.slice(0, 1000).map(row => `
-        <tr>
-          <td>${escapeHtml(row.month || row.monthYear)}</td>
-          <td>${escapeHtml(row.year)}</td>
-          <td>${escapeHtml(row.date)}</td>
-          <td>${escapeHtml(row.channel)}</td>
-          <td>${escapeHtml(row.channelSku)}</td>
-          <td>${escapeHtml(row.universeSku)}</td>
-          <td>${formatNumber(row.sale)}</td>
-        </tr>
-      `).join('') || '<tr><td colspan="7">No data found</td></tr>';
-    }
-
-    function buildMonthSeries(data) {
-      const map = new Map();
-      data.forEach(row => {
-        const key = `${row.year}-${row.month}`;
-        map.set(key, (map.get(key) || 0) + row.sale);
-      });
-      return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-    }
-
-    function renderCharts(data) {
-      const monthSeries = buildMonthSeries(data);
-      const channelSeries = topItems(data, 'channel', 10);
-
-      if (monthChart) monthChart.destroy();
-      if (channelChart) channelChart.destroy();
-
-      monthChart = new Chart(document.getElementById('monthChart'), {
-        type: 'bar',
-        data: {
-          labels: monthSeries.map(item => item[0]),
-          datasets: [{
-            label: 'Sales',
-            data: monthSeries.map(item => item[1]),
-            backgroundColor: 'rgba(13, 92, 74, 0.72)',
-            borderColor: 'rgba(13, 92, 74, 1)',
-            borderWidth: 1,
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { x: { grid: { display: false } }, y: { beginAtZero: true } }
-        }
-      });
-
-      channelChart = new Chart(document.getElementById('channelChart'), {
-        type: 'doughnut',
-        data: {
-          labels: channelSeries.map(item => item[0]),
-          datasets: [{
-            label: 'Sales',
-            data: channelSeries.map(item => item[1]),
-            backgroundColor: ['#0d5c4a', '#c9a84c', '#2d7a5f', '#c47a1a', '#6b7c75', '#0f6b56', '#e8f4f0', '#b78c22', '#7ca798', '#d8c69a'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'top' } }
-        }
-      });
-    }
-
-    function applyFilters() {
-      const month = els.monthFilter.value;
-      const year = els.yearFilter.value;
-      const channel = els.channelFilter.value;
-      const sku = els.skuFilter.value.trim().toLowerCase();
-      const search = els.searchInput.value.trim().toLowerCase();
-
-      filteredData = rawData.filter(row => {
-        const matchesMonth = !month || row.month === month;
-        const matchesYear = !year || row.year === year;
-        const matchesChannel = !channel || row.channel === channel;
-        const matchesSku = !sku || row.channelSku.toLowerCase().includes(sku);
-        const haystack = `${row.channel} ${row.channelSku} ${row.universeSku} ${row.month} ${row.year}`.toLowerCase();
-        const matchesSearch = !search || haystack.includes(search);
-        return matchesMonth && matchesYear && matchesChannel && matchesSku && matchesSearch;
-      });
-
-      renderCards(filteredData);
-      renderCharts(filteredData);
-      renderTopTables(filteredData);
-      renderDetails(filteredData);
-    }
-
-    function bindSalesEvents() {
-      if (salesEventsBound) return;
-      salesEventsBound = true;
-
-      els.fetchBtn.addEventListener('click', loadData);
-      els.salesOverviewNav.addEventListener('click', () => {
-        els.salesOverviewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-
-      [els.monthFilter, els.yearFilter, els.channelFilter].forEach(el => {
-        el.addEventListener('change', applyFilters);
-      });
-      els.skuFilter.addEventListener('input', applyFilters);
-      els.searchInput.addEventListener('input', applyFilters);
-      els.resetBtn.addEventListener('click', () => {
-        els.monthFilter.value = '';
-        els.yearFilter.value = '';
-        els.channelFilter.value = '';
-        els.skuFilter.value = '';
-        els.searchInput.value = '';
-        applyFilters();
-      });
-    }
-
-    function initFilters(data) {
-      fillSelect(els.monthFilter, uniqueValues(data, 'month'));
-      fillSelect(els.yearFilter, uniqueValues(data, 'year'));
-      fillSelect(els.channelFilter, uniqueValues(data, 'channel'));
-      fillDatalist(els.skuOptions, uniqueValues(data, 'channelSku'));
-    }
-
-    function setProgress(value, label) {
-      const safeValue = Math.max(0, Math.min(100, value));
-      els.progressFill.style.width = `${safeValue}%`;
-      els.progressValue.textContent = `${safeValue}%`;
-      els.progressText.textContent = label || `Loading data... ${safeValue}%`;
-    }
-
-    function resetSalesDashboard() {
-      if (monthChart) { monthChart.destroy(); monthChart = null; }
-      if (channelChart) { channelChart.destroy(); channelChart = null; }
-      rawData = [];
-      filteredData = [];
-      els.totalSales.textContent = '0';
-      els.totalRows.textContent = '0';
-      els.uniqueSku.textContent = '0';
-      els.topChannel.textContent = '-';
-      els.topChannelSales.textContent = '0 sales';
-      els.recordBadge.textContent = '0';
-      els.topSkuTable.innerHTML = '<tr><td colspan="3">No data loaded</td></tr>';
-      els.topUniverseTable.innerHTML = '<tr><td colspan="3">No data loaded</td></tr>';
-      els.detailTable.innerHTML = '<tr><td colspan="7">No data loaded</td></tr>';
-      els.monthFilter.innerHTML = '<option value="">All</option>';
-      els.yearFilter.innerHTML = '<option value="">All</option>';
-      els.channelFilter.innerHTML = '<option value="">All</option>';
-      els.skuFilter.value = '';
-      els.skuOptions.innerHTML = '';
-    }
-
-    function loadData() {
-      resetSalesDashboard();
-      setProgress(10, 'Connecting to Google Sheet... 10%');
-
-      Papa.parse(CSV_URL, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        beforeFirstChunk: (chunk) => {
-          setProgress(35, 'Downloading CSV... 35%');
-          return chunk;
-        },
-        complete: (results) => {
-          setProgress(70, 'Processing records... 70%');
-          rawData = results.data.map(normalizeRow).filter(row => row.channel || row.channelSku || row.universeSku || row.sale);
-          setProgress(90, 'Building dashboard... 90%');
-          initFilters(rawData);
-          applyFilters();
-          setProgress(100, `Loaded successfully · ${new Date().toLocaleString('en-IN')}`);
-        },
-        error: (error) => {
-          console.error(error);
-          setProgress(100, 'Failed to load data');
-          alert('Could not load CSV data. Please check your published Google Sheet link.');
-        }
-      });
-    }
-
-    function normalizeDemandHeader(text) {
-      return String(text || '').replace(/\s+/g, ' ').replace(/\n/g, ' ').trim();
-    }
-
-    function detectHeaderRow(rows) {
-      return rows.findIndex(row => row.some(cell => normalizeDemandHeader(cell) === 'Master SKU'));
-    }
-
-    function parseDemandCsv(csvText, sourceLabel) {
-      const parsed = Papa.parse(csvText.trim(), { skipEmptyLines: true });
-      const rows = parsed.data || [];
-      const headerIndex = detectHeaderRow(rows);
-      if (headerIndex === -1) return [];
-      const headers = rows[headerIndex].map(normalizeDemandHeader);
-
-      return rows.slice(headerIndex + 1)
-        .filter(row => row.some(cell => String(cell || '').trim() !== ''))
-        .map(row => {
-          const record = {};
-          headers.forEach((header, index) => {
-            if (header) record[header] = row[index] ?? '';
-          });
-          record.__type = sourceLabel;
-          return record;
-        });
-    }
-
-    function mergeDemandColumns(rows) {
-      const seen = new Set();
-      const ordered = [];
-
-      DEMAND_PRIORITY_COLUMNS.forEach(col => {
-        if (rows.some(row => Object.prototype.hasOwnProperty.call(row, col))) {
-          ordered.push(col);
-          seen.add(col);
-        }
-      });
-
-      rows.forEach(row => {
-        Object.keys(row).forEach(key => {
-          if (!key.startsWith('__') && !seen.has(key)) {
-            seen.add(key);
-            ordered.push(key);
-          }
-        });
-      });
-
-      return ordered;
-    }
-
-    function getActiveDemandRows() {
-      return demandState.activeTab === 'parent' ? demandState.parentRows : demandState.childRows;
-    }
-
-    function fillDemandFilters(rows) {
-      const typeValues = [...new Set(rows.map(row => row.__type).filter(Boolean))].sort();
-      const locValues = [...new Set(rows.map(row => String(row['Loc'] || '').trim()).filter(Boolean))].sort();
-      fillSelect(els.demandTypeFilter, typeValues);
-      fillSelect(els.demandLocFilter, locValues);
-    }
-
-    function renderDemandTable() {
-      const rows = getActiveDemandRows();
-      const typeFilter = els.demandTypeFilter.value;
-      const locFilter = els.demandLocFilter.value;
-      const search = els.demandSearch.value.trim().toLowerCase();
-      const columns = mergeDemandColumns(rows);
-
-      let filtered = rows.filter(row => {
-        const matchesType = !typeFilter || row.__type === typeFilter;
-        const matchesLoc = !locFilter || String(row['Loc'] || '').trim() === locFilter;
-        const haystack = Object.entries(row)
-          .filter(([key]) => !key.startsWith('__'))
-          .map(([, value]) => String(value || '').toLowerCase())
-          .join(' ');
-        const matchesSearch = !search || haystack.includes(search);
-        return matchesType && matchesLoc && matchesSearch;
-      });
-
-      if (demandState.sortColumn) {
-        const sortCol = demandState.sortColumn;
-        const dir = demandState.sortDirection === 'asc' ? 1 : -1;
-        filtered = filtered.slice().sort((a, b) => String(a[sortCol] || '').localeCompare(String(b[sortCol] || ''), undefined, { numeric: true }) * dir);
-      }
-
-      els.demandTableHead.innerHTML = columns.length
-        ? columns.map(col => `<th class="sortable" data-col="${escapeHtml(col)}">${escapeHtml(col)}</th>`).join('')
-        : '<th>No columns</th>';
-
-      els.demandTableBody.innerHTML = filtered.length
-        ? filtered.map(row => `<tr>${columns.map(col => `<td>${escapeHtml(row[col] || '')}</td>`).join('')}</tr>`).join('')
-        : '<tr><td style="padding:1rem;">No matching demand data</td></tr>';
-
-      els.demandTableHead.querySelectorAll('.sortable').forEach(th => {
-        th.addEventListener('click', () => {
-          const col = th.getAttribute('data-col');
-          if (demandState.sortColumn === col) {
-            demandState.sortDirection = demandState.sortDirection === 'asc' ? 'desc' : 'asc';
-          } else {
-            demandState.sortColumn = col;
-            demandState.sortDirection = 'asc';
-          }
-          renderDemandTable();
-        });
-      });
-    }
-
-    function renderDemandTab(tab) {
-      demandState.activeTab = tab;
-      els.parentTabBtn.classList.toggle('active', tab === 'parent');
-      els.childTabBtn.classList.toggle('active', tab === 'child');
-      els.demandTypeFilter.value = '';
-      els.demandLocFilter.value = '';
-      els.demandSearch.value = '';
-      fillDemandFilters(getActiveDemandRows());
-      renderDemandTable();
-    }
-
-    async function fetchCsvText(url) {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Failed to fetch ${url}`);
-      return await response.text();
-    }
-
-    async function loadDemandData() {
-      els.demandStatus.textContent = 'Fetching demand sensing data...';
-
-      try {
-        const [parentOpenCsv, parentClosedCsv, childOpenCsv, childClosedCsv] = await Promise.all([
-          fetchCsvText(DEMAND_SENSING_SOURCES.parentOpen),
-          fetchCsvText(DEMAND_SENSING_SOURCES.parentClosed),
-          fetchCsvText(DEMAND_SENSING_SOURCES.childOpen),
-          fetchCsvText(DEMAND_SENSING_SOURCES.childClosed)
-        ]);
-
-        demandState.parentRows = [
-          ...parseDemandCsv(parentOpenCsv, 'Parent Level'),
-          ...parseDemandCsv(parentClosedCsv, 'Closed of Parent Level')
-        ];
-        demandState.childRows = [
-          ...parseDemandCsv(childOpenCsv, 'Demand Sensing'),
-          ...parseDemandCsv(childClosedCsv, 'Closed Demand Sensing')
-        ];
-        demandState.sortColumn = '';
-        demandState.sortDirection = 'asc';
-
-        renderDemandTab(demandState.activeTab || 'parent');
-        els.demandStatus.textContent = `Loaded Parent: ${formatNumber(demandState.parentRows.length)} rows · Child: ${formatNumber(demandState.childRows.length)} rows`;
-      } catch (error) {
-        console.error(error);
-        els.demandStatus.textContent = 'Could not load demand sensing CSV files. Please check the 4 published links.';
-      }
-    }
-
-    function bindDemandEvents() {
-      if (demandEventsBound) return;
-      demandEventsBound = true;
-
-      els.demandNav.addEventListener('click', () => {
-        els.demandSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-      els.fetchDemandBtn.addEventListener('click', loadDemandData);
-      els.parentTabBtn.addEventListener('click', () => renderDemandTab('parent'));
-      els.childTabBtn.addEventListener('click', () => renderDemandTab('child'));
-      els.demandTypeFilter.addEventListener('change', renderDemandTable);
-      els.demandLocFilter.addEventListener('change', renderDemandTable);
-      els.demandSearch.addEventListener('input', renderDemandTable);
-      els.demandResetBtn.addEventListener('click', () => {
-        els.demandTypeFilter.value = '';
-        els.demandLocFilter.value = '';
-        els.demandSearch.value = '';
-        renderDemandTable();
-      });
-    }
-
-    bindSalesEvents();
-    bindDemandEvents();
-    setProgress(0, 'Click Fetch Data to load from Google Sheet');
-  </script>
+<script>
+const CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vQdHExOAA5aff9JEonyhNV0xaO-f-AbEb7TMyI76ZfbJ3AlEUGRhgJBvSGMSX-kUsTbHSqlBOZctcPD/pub?output=csv';
+const DEMAND_SENSING_SOURCES={parentOpen:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUsvBi2P7UlPymqL_OH9z5sTY7zb7WTdaNFIAGkyla-TqW_GN7HI-5FV9d1fDJunXuGzVeOuJU8L_i/pub?gid=0&single=true&output=csv',parentClosed:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUsvBi2P7UlPymqL_OH9z5sTY7zb7WTdaNFIAGkyla-TqW_GN7HI-5FV9d1fDJunXuGzVeOuJU8L_i/pub?gid=1638204067&single=true&output=csv',childOpen:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUsvBi2P7UlPymqL_OH9z5sTY7zb7WTdaNFIAGkyla-TqW_GN7HI-5FV9d1fDJunXuGzVeOuJU8L_i/pub?gid=1722425886&single=true&output=csv',childClosed:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUsvBi2P7UlPymqL_OH9z5sTY7zb7WTdaNFIAGkyla-TqW_GN7HI-5FV9d1fDJunXuGzVeOuJU8L_i/pub?gid=1753975323&single=true&output=csv'};
+const DEMAND_PRIORITY_COLUMNS=['Master SKU','Style ID / Parent SKU','Size','Category','Loc','ST CS','Wholesale Price','Catalog Name','Up Price','Uniware Stock','FBA','FBF','SJIT','Launch Date','.','Manual Close / New','Child Remark','Parent Remark'];
+let rawData=[],filteredData=[],monthChart=null,channelChart=null,salesEventsBound=false,demandEventsBound=false;
+const demandState={activeTab:'parent',parentRows:[],childRows:[],sortColumn:'',sortDirection:'asc'};
+const els={monthFilter:document.getElementById('monthFilter'),yearFilter:document.getElementById('yearFilter'),channelFilter:document.getElementById('channelFilter'),skuFilter:document.getElementById('skuFilter'),skuOptions:document.getElementById('skuOptions'),searchInput:document.getElementById('searchInput'),resetBtn:document.getElementById('resetBtn'),totalSales:document.getElementById('totalSales'),totalRows:document.getElementById('totalRows'),uniqueSku:document.getElementById('uniqueSku'),topChannel:document.getElementById('topChannel'),topChannelSales:document.getElementById('topChannelSales'),topSkuTable:document.getElementById('topSkuTable'),topUniverseTable:document.getElementById('topUniverseTable'),detailTable:document.getElementById('detailTable'),progressText:document.getElementById('progressText'),progressValue:document.getElementById('progressValue'),progressFill:document.getElementById('progressFill'),recordBadge:document.getElementById('recordBadge'),fetchBtn:document.getElementById('fetchBtn'),salesOverviewNav:document.getElementById('salesOverviewNav'),demandNav:document.getElementById('demandNav'),parentTabBtn:document.getElementById('parentTabBtn'),childTabBtn:document.getElementById('childTabBtn'),fetchDemandBtn:document.getElementById('fetchDemandBtn'),demandStatus:document.getElementById('demandStatus'),demandTypeFilter:document.getElementById('demandTypeFilter'),demandLocFilter:document.getElementById('demandLocFilter'),demandSearch:document.getElementById('demandSearch'),demandResetBtn:document.getElementById('demandResetBtn'),demandTableHead:document.getElementById('demandTableHead'),demandTableBody:document.getElementById('demandTableBody'),salesPage:document.getElementById('sales-page'),demandPage:document.getElementById('demand-page'),demandProgressText:document.getElementById('demandProgressText'),demandProgressValue:document.getElementById('demandProgressValue'),demandProgressFill:document.getElementById('demandProgressFill'),demandLastUpdated:document.getElementById('demandLastUpdated')};
+function escapeHtml(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function showPage(page){const isSales=page==='sales';els.salesPage.style.display=isSales?'block':'none';els.demandPage.style.display=isSales?'none':'block';els.salesOverviewNav.classList.toggle('active',isSales);els.demandNav.classList.toggle('active',!isSales);window.scrollTo({top:0,behavior:'smooth'})}
+function setProgress(value,label){const v=Math.max(0,Math.min(100,value));els.progressFill.style.width=`${v}%`;els.progressValue.textContent=`${v}%`;els.progressText.textContent=label||`Loading data... ${v}%`}
+function setDemandProgress(value,label){const v=Math.max(0,Math.min(100,value));els.demandProgressFill.style.width=`${v}%`;els.demandProgressValue.textContent=`${v}%`;els.demandProgressText.textContent=label||`Loading demand data... ${v}%`}
+function normalizeRow(row){const month=row.Month||row.MONTH||row.month||'',year=row.Year||row.YEAR||row.year||'',date=row.DATE||row.Date||row.date||'',sale=Number(row.SALE||row.Sale||row.sale||0)||0,channel=row['MASTER Channel Name']||row['MASTER Channel']||row['MASTER Channel Name ']||row['Master Channel Name']||'',channelSku=row['Channel SKU']||row['CHANNEL SKU']||row['Channel Sku']||'',universeSku=row['Uniwere Sku']||row['Universe Sku']||row['UNIVERSE SKU']||row['Universe SKU']||'',monthYear=row.MONTH||row['MONTH ']||'';return{month:String(month).trim(),year:String(year).trim(),date:String(date).trim(),sale,channel:String(channel).trim(),channelSku:String(channelSku).trim(),universeSku:String(universeSku).trim(),monthYear:String(monthYear).trim(),raw:row}}
+function uniqueValues(data,key){return[...new Set(data.map(i=>i[key]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)))}
+function fillSelect(select,values){const current=select.value;select.innerHTML='<option value="">All</option>';values.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;select.appendChild(o)});if(values.includes(current))select.value=current}
+function fillDatalist(listEl,values){const current=els.skuFilter.value;listEl.innerHTML='';values.forEach(v=>{const o=document.createElement('option');o.value=v;listEl.appendChild(o)});if(!values.includes(current))els.skuFilter.value=current}
+function aggregate(data,key){return data.reduce((acc,row)=>{const group=row[key]||'Unknown';acc[group]=(acc[group]||0)+row.sale;return acc},{})}
+function topItems(data,key,limit=10){return Object.entries(aggregate(data,key)).sort((a,b)=>b[1]-a[1]).slice(0,limit)}
+function formatNumber(v){return new Intl.NumberFormat('en-IN').format(v||0)}
+function renderCards(data){const totalSales=data.reduce((s,r)=>s+r.sale,0),uniqueSku=new Set(data.map(r=>r.channelSku).filter(Boolean)).size,channelTotals=topItems(data,'channel',1);els.totalSales.textContent=formatNumber(totalSales);els.totalRows.textContent=formatNumber(data.length);els.uniqueSku.textContent=formatNumber(uniqueSku);els.topChannel.textContent=channelTotals[0]?.[0]||'-';els.topChannelSales.textContent=`${formatNumber(channelTotals[0]?.[1]||0)} sales`;els.recordBadge.textContent=formatNumber(data.length)}
+function renderTopTables(data){const topSku=topItems(data,'channelSku'),topUniverse=topItems(data,'universeSku');els.topSkuTable.innerHTML=topSku.map((i,x)=>`<tr><td>${x+1}</td><td>${escapeHtml(i[0])}</td><td>${formatNumber(i[1])}</td></tr>`).join('')||'<tr><td colspan="3">No data found</td></tr>';els.topUniverseTable.innerHTML=topUniverse.map((i,x)=>`<tr><td>${x+1}</td><td>${escapeHtml(i[0])}</td><td>${formatNumber(i[1])}</td></tr>`).join('')||'<tr><td colspan="3">No data found</td></tr>'}
+function renderDetails(data){els.detailTable.innerHTML=data.slice(0,1000).map(r=>`<tr><td>${escapeHtml(r.month||r.monthYear)}</td><td>${escapeHtml(r.year)}</td><td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.channel)}</td><td>${escapeHtml(r.channelSku)}</td><td>${escapeHtml(r.universeSku)}</td><td>${formatNumber(r.sale)}</td></tr>`).join('')||'<tr><td colspan="7">No data found</td></tr>'}
+function buildMonthSeries(data){const map=new Map();data.forEach(r=>{const k=`${r.year}-${r.month}`;map.set(k,(map.get(k)||0)+r.sale)});return[...map.entries()].sort((a,b)=>a[0].localeCompare(b[0]))}
+function renderCharts(data){const monthSeries=buildMonthSeries(data),channelSeries=topItems(data,'channel',10);if(monthChart)monthChart.destroy();if(channelChart)channelChart.destroy();monthChart=new Chart(document.getElementById('monthChart'),{type:'bar',data:{labels:monthSeries.map(i=>i[0]),datasets:[{label:'Sales',data:monthSeries.map(i=>i[1]),backgroundColor:'rgba(13, 92, 74, 0.72)',borderColor:'rgba(13, 92, 74, 1)',borderWidth:1,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true}}}});channelChart=new Chart(document.getElementById('channelChart'),{type:'doughnut',data:{labels:channelSeries.map(i=>i[0]),datasets:[{label:'Sales',data:channelSeries.map(i=>i[1]),backgroundColor:['#0d5c4a','#c9a84c','#2d7a5f','#c47a1a','#6b7c75','#0f6b56','#e8f4f0','#b78c22','#7ca798','#d8c69a'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}}}})}
+function applyFilters(){const month=els.monthFilter.value,year=els.yearFilter.value,channel=els.channelFilter.value,sku=els.skuFilter.value.trim().toLowerCase(),search=els.searchInput.value.trim().toLowerCase();filteredData=rawData.filter(r=>{const m1=!month||r.month===month,m2=!year||r.year===year,m3=!channel||r.channel===channel,m4=!sku||r.channelSku.toLowerCase().includes(sku),hay=`${r.channel} ${r.channelSku} ${r.universeSku} ${r.month} ${r.year}`.toLowerCase(),m5=!search||hay.includes(search);return m1&&m2&&m3&&m4&&m5});renderCards(filteredData);renderCharts(filteredData);renderTopTables(filteredData);renderDetails(filteredData)}
+function bindSalesEvents(){if(salesEventsBound)return;salesEventsBound=true;els.fetchBtn.addEventListener('click',loadData);els.salesOverviewNav.addEventListener('click',()=>showPage('sales'));[els.monthFilter,els.yearFilter,els.channelFilter].forEach(el=>el.addEventListener('change',applyFilters));els.skuFilter.addEventListener('input',applyFilters);els.searchInput.addEventListener('input',applyFilters);els.resetBtn.addEventListener('click',()=>{els.monthFilter.value='';els.yearFilter.value='';els.channelFilter.value='';els.skuFilter.value='';els.searchInput.value='';applyFilters()})}
+function initFilters(data){fillSelect(els.monthFilter,uniqueValues(data,'month'));fillSelect(els.yearFilter,uniqueValues(data,'year'));fillSelect(els.channelFilter,uniqueValues(data,'channel'));fillDatalist(els.skuOptions,uniqueValues(data,'channelSku'))}
+function resetSalesDashboard(){if(monthChart){monthChart.destroy();monthChart=null}if(channelChart){channelChart.destroy();channelChart=null}rawData=[];filteredData=[];els.totalSales.textContent='0';els.totalRows.textContent='0';els.uniqueSku.textContent='0';els.topChannel.textContent='-';els.topChannelSales.textContent='0 sales';els.recordBadge.textContent='0';els.topSkuTable.innerHTML='<tr><td colspan="3">No data loaded</td></tr>';els.topUniverseTable.innerHTML='<tr><td colspan="3">No data loaded</td></tr>';els.detailTable.innerHTML='<tr><td colspan="7">No data loaded</td></tr>';els.monthFilter.innerHTML='<option value="">All</option>';els.yearFilter.innerHTML='<option value="">All</option>';els.channelFilter.innerHTML='<option value="">All</option>';els.skuFilter.value='';els.skuOptions.innerHTML=''}
+function loadData(){resetSalesDashboard();setProgress(10,'Connecting to Google Sheet... 10%');Papa.parse(CSV_URL,{download:true,header:true,skipEmptyLines:true,beforeFirstChunk:(c)=>{setProgress(35,'Downloading CSV... 35%');return c},complete:(results)=>{setProgress(70,'Processing records... 70%');rawData=results.data.map(normalizeRow).filter(r=>r.channel||r.channelSku||r.universeSku||r.sale);setProgress(90,'Building dashboard... 90%');initFilters(rawData);applyFilters();setProgress(100,`Loaded successfully · ${new Date().toLocaleString('en-IN')}`)},error:(e)=>{console.error(e);setProgress(100,'Failed to load data');alert('Could not load CSV data. Please check your published Google Sheet link.')}})}
+function normalizeDemandHeader(text){return String(text||'').replace(/\s+/g,' ').replace(/\n/g,' ').trim()} function detectHeaderRow(rows){return rows.findIndex(row=>row.some(cell=>normalizeDemandHeader(cell)==='Master SKU'))}
+function parseDemandCsv(csvText,sourceLabel){const parsed=Papa.parse(csvText.trim(),{skipEmptyLines:true}),rows=parsed.data||[],headerIndex=detectHeaderRow(rows);if(headerIndex===-1)return[];const headers=rows[headerIndex].map(normalizeDemandHeader);return rows.slice(headerIndex+1).filter(r=>r.some(c=>String(c||'').trim()!=='' )).map(row=>{const rec={};headers.forEach((h,i)=>{if(h)rec[h]=row[i]??''});rec.__type=sourceLabel;return rec})}
+function mergeDemandColumns(rows){const seen=new Set(),ordered=[];DEMAND_PRIORITY_COLUMNS.forEach(col=>{if(rows.some(r=>Object.prototype.hasOwnProperty.call(r,col))){ordered.push(col);seen.add(col)}});rows.forEach(r=>Object.keys(r).forEach(k=>{if(!k.startsWith('__')&&!seen.has(k)){seen.add(k);ordered.push(k)}}));return ordered}
+function getActiveDemandRows(){return demandState.activeTab==='parent'?demandState.parentRows:demandState.childRows}
+function fillDemandFilters(rows){const typeValues=[...new Set(rows.map(r=>r.__type).filter(Boolean))].sort(),locValues=[...new Set(rows.map(r=>String(r['Loc']||'').trim()).filter(Boolean))].sort();fillSelect(els.demandTypeFilter,typeValues);fillSelect(els.demandLocFilter,locValues)}
+function renderDemandTable(){const rows=getActiveDemandRows(),typeFilter=els.demandTypeFilter.value,locFilter=els.demandLocFilter.value,search=els.demandSearch.value.trim().toLowerCase(),columns=mergeDemandColumns(rows);let filtered=rows.filter(r=>{const m1=!typeFilter||r.__type===typeFilter,m2=!locFilter||String(r['Loc']||'').trim()===locFilter,hay=Object.entries(r).filter(([k])=>!k.startsWith('__')).map(([,v])=>String(v||'').toLowerCase()).join(' '),m3=!search||hay.includes(search);return m1&&m2&&m3});if(demandState.sortColumn){const c=demandState.sortColumn,d=demandState.sortDirection==='asc'?1:-1;filtered=filtered.slice().sort((a,b)=>String(a[c]||'').localeCompare(String(b[c]||''),undefined,{numeric:true})*d)}els.demandTableHead.innerHTML=columns.length?columns.map(c=>`<th class="sortable" data-col="${escapeHtml(c)}">${escapeHtml(c)}</th>`).join(''):'<th>No columns</th>';els.demandTableBody.innerHTML=filtered.length?filtered.map(r=>`<tr>${columns.map(c=>`<td>${escapeHtml(r[c]||'')}</td>`).join('')}</tr>`).join(''):'<tr><td style="padding:1rem;">No matching demand data</td></tr>';els.demandTableHead.querySelectorAll('.sortable').forEach(th=>th.addEventListener('click',()=>{const c=th.getAttribute('data-col');if(demandState.sortColumn===c){demandState.sortDirection=demandState.sortDirection==='asc'?'desc':'asc'}else{demandState.sortColumn=c;demandState.sortDirection='asc'}renderDemandTable()}))}
+function renderDemandTab(tab){demandState.activeTab=tab;els.parentTabBtn.classList.toggle('active',tab==='parent');els.childTabBtn.classList.toggle('active',tab==='child');els.demandTypeFilter.value='';els.demandLocFilter.value='';els.demandSearch.value='';fillDemandFilters(getActiveDemandRows());renderDemandTable()}
+async function fetchCsvText(url){const res=await fetch(url);if(!res.ok)throw new Error(`Failed to fetch ${url}`);return await res.text()}
+async function loadDemandData(){setDemandProgress(10,'Connecting demand sheets... 10%');els.demandStatus.textContent='Fetching demand sensing data...';try{setDemandProgress(30,'Downloading CSV files... 30%');const [parentOpenCsv,parentClosedCsv,childOpenCsv,childClosedCsv]=await Promise.all([fetchCsvText(DEMAND_SENSING_SOURCES.parentOpen),fetchCsvText(DEMAND_SENSING_SOURCES.parentClosed),fetchCsvText(DEMAND_SENSING_SOURCES.childOpen),fetchCsvText(DEMAND_SENSING_SOURCES.childClosed)]);setDemandProgress(65,'Merging Parent and Child data... 65%');demandState.parentRows=[...parseDemandCsv(parentOpenCsv,'Parent Level'),...parseDemandCsv(parentClosedCsv,'Closed of Parent Level')];demandState.childRows=[...parseDemandCsv(childOpenCsv,'Demand Sensing'),...parseDemandCsv(childClosedCsv,'Closed Demand Sensing')];demandState.sortColumn='';demandState.sortDirection='asc';setDemandProgress(90,'Building demand database... 90%');renderDemandTab(demandState.activeTab||'parent');setDemandProgress(100,'Demand data loaded successfully');els.demandLastUpdated.textContent=`Last updated: ${new Date().toLocaleString('en-IN')}`;els.demandStatus.textContent=`Loaded Parent: ${formatNumber(demandState.parentRows.length)} rows · Child: ${formatNumber(demandState.childRows.length)} rows`}catch(e){console.error(e);setDemandProgress(100,'Failed to load demand data');els.demandStatus.textContent='Could not load demand sensing CSV files. Please check the 4 published links.'}}
+function bindDemandEvents(){if(demandEventsBound)return;demandEventsBound=true;els.demandNav.addEventListener('click',()=>showPage('demand'));els.fetchDemandBtn.addEventListener('click',loadDemandData);els.parentTabBtn.addEventListener('click',()=>renderDemandTab('parent'));els.childTabBtn.addEventListener('click',()=>renderDemandTab('child'));els.demandTypeFilter.addEventListener('change',renderDemandTable);els.demandLocFilter.addEventListener('change',renderDemandTable);els.demandSearch.addEventListener('input',renderDemandTable);els.demandResetBtn.addEventListener('click',()=>{els.demandTypeFilter.value='';els.demandLocFilter.value='';els.demandSearch.value='';renderDemandTable()})}
+bindSalesEvents();bindDemandEvents();setProgress(0,'Click Fetch Data to load from Google Sheet');setDemandProgress(0,'Click Fetch Demand Data to load');showPage('sales');
+</script>
 </body>
 </html>
