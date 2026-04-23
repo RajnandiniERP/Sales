@@ -26,7 +26,6 @@
       --amber: #c47a1a;
       --sidebar-w: 260px;
       --shadow: 0 18px 40px rgba(9, 64, 53, 0.08);
-      --radius: 14px;
     }
 
     * { box-sizing: border-box; }
@@ -150,7 +149,7 @@
       align-items: center;
       gap: 0.7rem;
       font-size: 0.86rem;
-      cursor: default;
+      cursor: pointer;
     }
 
     .nav-item.active {
@@ -203,22 +202,6 @@
       font-family: "Cormorant Garamond", serif;
       font-size: 1.5rem;
       color: var(--teal);
-      font-weight: 700;
-    }
-
-    .topbar-meta {
-      display: flex;
-      gap: 0.75rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .meta-pill {
-      background: var(--teal-light);
-      color: var(--teal);
-      padding: 0.38rem 0.85rem;
-      border-radius: 999px;
-      font-size: 0.74rem;
       font-weight: 700;
     }
 
@@ -445,11 +428,12 @@
       margin-bottom: 1.3rem;
     }
 
-    .table-wrap {
+    .table-wrap,
+    .demand-table-wrap {
       overflow: auto;
       border: 1px solid var(--border);
       border-radius: 10px;
-      max-height: 380px;
+      max-height: 520px;
     }
 
     table {
@@ -469,6 +453,7 @@
       white-space: nowrap;
       position: sticky;
       top: 0;
+      z-index: 1;
     }
 
     tbody tr:nth-child(even) { background: #faf8f4; }
@@ -488,10 +473,60 @@
       font-size: 0.74rem;
     }
 
+    .tab-row {
+      display: flex;
+      gap: 0.7rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tab-btn {
+      border: 1px solid var(--border);
+      background: var(--white);
+      color: var(--teal-dark);
+      padding: 0.72rem 1rem;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: var(--teal);
+      color: var(--white);
+      border-color: var(--teal);
+    }
+
+    .status-note {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+
+    .demand-toolbar {
+      display: grid;
+      grid-template-columns: 180px 180px 1fr 180px;
+      gap: 0.9rem;
+      align-items: end;
+      margin-bottom: 1rem;
+    }
+
+    .sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .sortable::after {
+      content: ' ↕';
+      opacity: 0.65;
+      font-size: 0.72rem;
+    }
+
     @media (max-width: 1200px) {
       .toolbar-grid { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
       .stats-row { grid-template-columns: repeat(2, 1fr); }
       .grid-2, .table-grid { grid-template-columns: 1fr; }
+      .demand-toolbar { grid-template-columns: 1fr 1fr; }
     }
 
     @media (max-width: 860px) {
@@ -503,7 +538,7 @@
       body { display: block; }
       .main { margin-left: 0; }
       .content, .topbar { padding-left: 1rem; padding-right: 1rem; }
-      .toolbar-grid { grid-template-columns: 1fr; }
+      .toolbar-grid, .demand-toolbar { grid-template-columns: 1fr; }
       .stats-row { grid-template-columns: 1fr; }
       .page-head h1 { font-size: 2rem; }
     }
@@ -527,8 +562,8 @@
     </div>
 
     <div class="sec-label">Dashboard</div>
-    <div class="nav-item active"><span>📊</span> Sales Overview <span class="nav-badge" id="recordBadge">0</span></div>
-    <div class="nav-item"><span>🧠</span> Demand Sensing <span class="nav-badge">NEW</span></div>
+    <div class="nav-item active" id="salesOverviewNav"><span>📊</span> Sales Overview <span class="nav-badge" id="recordBadge">0</span></div>
+    <div class="nav-item" id="demandNav"><span>🧠</span> Demand Sensing <span class="nav-badge">NEW</span></div>
     <div class="nav-item"><span>🛒</span> Sales Reports</div>
     <div class="nav-item"><span>📦</span> SKU Performance</div>
     <div class="nav-item"><span>🏬</span> Channel Summary</div>
@@ -542,150 +577,193 @@
   <div class="main">
     <div class="topbar">
       <div class="topbar-title">Sales Dashboard</div>
-      <div class="topbar-meta">
+      <div>
         <button class="btn btn-primary" id="fetchBtn">Fetch Data</button>
       </div>
     </div>
 
     <div class="content">
-      <div class="page-head">
-        <div>
-          <h1>Sales Overview</h1>
-          <p>Live data from Google Sheets CSV</p>
+      <div id="sales-overview-section">
+        <div class="page-head">
+          <div>
+            <h1>Sales Overview</h1>
+            <p>Live data from Google Sheets CSV</p>
+          </div>
+          <div class="progress-card" id="loadingCard">
+            <div class="progress-head">
+              <span id="progressText">Click Fetch Data to load from Google Sheet</span>
+              <span id="progressValue">0%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-head-title">Filters & Search</span>
+          </div>
+          <div class="card-body">
+            <div class="toolbar-grid">
+              <div class="form-field">
+                <label for="monthFilter">Month</label>
+                <select id="monthFilter"><option value="">All</option></select>
+              </div>
+              <div class="form-field">
+                <label for="yearFilter">Year</label>
+                <select id="yearFilter"><option value="">All</option></select>
+              </div>
+              <div class="form-field">
+                <label for="channelFilter">Channel</label>
+                <select id="channelFilter"><option value="">All</option></select>
+              </div>
+              <div class="form-field">
+                <label for="skuFilter">Channel SKU</label>
+                <input id="skuFilter" list="skuOptions" type="text" placeholder="Search or select SKU" />
+                <datalist id="skuOptions"></datalist>
+              </div>
+              <div class="form-field">
+                <label for="searchInput">Search</label>
+                <input id="searchInput" type="text" placeholder="Search SKU, channel, universe SKU..." />
+              </div>
+              <div class="form-field">
+                <label>&nbsp;</label>
+                <button class="btn btn-gold" id="resetBtn" type="button">Reset Filters</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card s-green">
+            <div class="stat-label">Total Sales</div>
+            <div class="stat-val" id="totalSales">0</div>
+            <div class="stat-sub">Sum of SALE column</div>
+          </div>
+          <div class="stat-card s-red">
+            <div class="stat-label">Rows / Orders</div>
+            <div class="stat-val" id="totalRows">0</div>
+            <div class="stat-sub">Filtered records</div>
+          </div>
+          <div class="stat-card s-amber">
+            <div class="stat-label">Unique Channel SKU</div>
+            <div class="stat-val" id="uniqueSku">0</div>
+            <div class="stat-sub">Distinct Channel SKU count</div>
+          </div>
+          <div class="stat-card s-teal">
+            <div class="stat-label">Top Channel</div>
+            <div class="stat-val" id="topChannel">-</div>
+            <div class="stat-sub" id="topChannelSales">0 sales</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><span class="card-head-title">Monthly Sales Trend</span></div>
+            <div class="card-body"><div class="chart-box"><canvas id="monthChart"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><span class="card-head-title">Channel Split</span></div>
+            <div class="card-body"><div class="chart-box"><canvas id="channelChart"></canvas></div></div>
+          </div>
+        </div>
+
+        <div class="table-grid">
+          <div class="card">
+            <div class="card-head"><span class="card-head-title">Top 10 Channel SKU</span></div>
+            <div class="card-body">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>Rank</th><th>Channel SKU</th><th>Total Sales</th></tr>
+                  </thead>
+                  <tbody id="topSkuTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><span class="card-head-title">Top 10 Universe SKU</span></div>
+            <div class="card-body">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>Rank</th><th>Universe SKU</th><th>Total Sales</th></tr>
+                  </thead>
+                  <tbody id="topUniverseTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-head-title">Detailed Sales Report</span></div>
+          <div class="card-body">
+            <div class="table-wrap" style="max-height:460px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Year</th>
+                    <th>Date</th>
+                    <th>Master Channel</th>
+                    <th>Channel SKU</th>
+                    <th>Universe SKU</th>
+                    <th>Sale</th>
+                  </tr>
+                </thead>
+                <tbody id="detailTable"></tbody>
+              </table>
+            </div>
+            <div class="footer-note">This dashboard uses your published Google Sheet CSV and refreshes when you click Fetch Data.</div>
+          </div>
         </div>
       </div>
 
-      
-
-        <div class="progress-card" id="loadingCard">
-          <div class="progress-head">
-            <span id="progressText">Click Fetch Data to load from Google Sheet</span>
-            <span id="progressValue">0%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
+      <div class="card" id="demand-sensing-section">
         <div class="card-head">
-          <span class="card-head-title">Filters & Search</span>
+          <span class="card-head-title">Demand Sensing Database</span>
         </div>
         <div class="card-body">
-          <div class="toolbar-grid">
+          <div class="tab-row">
+            <button class="tab-btn active" id="parentTabBtn" type="button">Parent</button>
+            <button class="tab-btn" id="childTabBtn" type="button">Child</button>
+            <button class="btn btn-primary" id="fetchDemandBtn" type="button">Fetch Demand Data</button>
+          </div>
+
+          <div class="status-note" id="demandStatus">Click Fetch Demand Data to load merged Parent and Child sheets.</div>
+
+          <div class="demand-toolbar">
             <div class="form-field">
-              <label for="monthFilter">Month</label>
-              <select id="monthFilter"><option value="">All</option></select>
+              <label for="demandTypeFilter">Data Type</label>
+              <select id="demandTypeFilter"><option value="">All</option></select>
             </div>
             <div class="form-field">
-              <label for="yearFilter">Year</label>
-              <select id="yearFilter"><option value="">All</option></select>
+              <label for="demandLocFilter">Location</label>
+              <select id="demandLocFilter"><option value="">All</option></select>
             </div>
             <div class="form-field">
-              <label for="channelFilter">Channel</label>
-              <select id="channelFilter"><option value="">All</option></select>
-            </div>
-            <div class="form-field">
-              <label for="skuFilter">Channel SKU</label>
-              <input id="skuFilter" list="skuOptions" type="text" placeholder="Search or select SKU" />
-              <datalist id="skuOptions"></datalist>
-            </div>
-            <div class="form-field">
-              <label for="searchInput">Search</label>
-              <input id="searchInput" type="text" placeholder="Search SKU, channel, universe SKU..." />
+              <label for="demandSearch">Search</label>
+              <input id="demandSearch" type="text" placeholder="Search Master SKU, Parent SKU, Category..." />
             </div>
             <div class="form-field">
               <label>&nbsp;</label>
-              <button class="btn btn-gold" id="resetBtn">Reset Filters</button>
+              <button class="btn btn-gold" id="demandResetBtn" type="button">Reset Demand Filters</button>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="stats-row">
-        <div class="stat-card s-green">
-          <div class="stat-label">Total Sales</div>
-          <div class="stat-val" id="totalSales">0</div>
-          <div class="stat-sub">Sum of SALE column</div>
-        </div>
-        <div class="stat-card s-red">
-          <div class="stat-label">Rows / Orders</div>
-          <div class="stat-val" id="totalRows">0</div>
-          <div class="stat-sub">Filtered records</div>
-        </div>
-        <div class="stat-card s-amber">
-          <div class="stat-label">Unique Channel SKU</div>
-          <div class="stat-val" id="uniqueSku">0</div>
-          <div class="stat-sub">Distinct Channel SKU count</div>
-        </div>
-        <div class="stat-card s-teal">
-          <div class="stat-label">Top Channel</div>
-          <div class="stat-val" id="topChannel">-</div>
-          <div class="stat-sub" id="topChannelSales">0 sales</div>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-head"><span class="card-head-title">Monthly Sales Trend</span></div>
-          <div class="card-body"><div class="chart-box"><canvas id="monthChart"></canvas></div></div>
-        </div>
-        <div class="card">
-          <div class="card-head"><span class="card-head-title">Channel Split</span></div>
-          <div class="card-body"><div class="chart-box"><canvas id="channelChart"></canvas></div></div>
-        </div>
-      </div>
-
-      <div class="table-grid">
-        <div class="card">
-          <div class="card-head"><span class="card-head-title">Top 10 Channel SKU</span></div>
-          <div class="card-body">
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Rank</th><th>Channel SKU</th><th>Total Sales</th></tr>
-                </thead>
-                <tbody id="topSkuTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-head"><span class="card-head-title">Top 10 Universe SKU</span></div>
-          <div class="card-body">
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Rank</th><th>Universe SKU</th><th>Total Sales</th></tr>
-                </thead>
-                <tbody id="topUniverseTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><span class="card-head-title">Detailed Sales Report</span></div>
-        <div class="card-body">
-          <div class="table-wrap" style="max-height:460px;">
+          <div class="demand-table-wrap">
             <table>
               <thead>
-                <tr>
-                  <th>Month</th>
-                  <th>Year</th>
-                  <th>Date</th>
-                  <th>Master Channel</th>
-                  <th>Channel SKU</th>
-                  <th>Universe SKU</th>
-                  <th>Sale</th>
-                </tr>
+                <tr id="demandTableHead"></tr>
               </thead>
-              <tbody id="detailTable"></tbody>
+              <tbody id="demandTableBody">
+                <tr><td style="padding:1rem;">No demand data loaded</td></tr>
+              </tbody>
             </table>
           </div>
-          <div class="footer-note">This dashboard uses your published Google Sheet CSV and refreshes on every page load.</div>
         </div>
       </div>
     </div>
@@ -694,10 +772,33 @@
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQdHExOAA5aff9JEonyhNV0xaO-f-AbEb7TMyI76ZfbJ3AlEUGRhgJBvSGMSX-kUsTbHSqlBOZctcPD/pub?output=csv';
 
+    const DEMAND_SENSING_SOURCES = {
+      parentOpen: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUsvBi2P7UlPymqL_OH9z5sTY7zb7WTdaNFIAGkyla-TqW_GN7HI-5FV9d1fDJunXuGzVeOuJU8L_i/pub?gid=0&single=true&output=csv',
+      parentClosed: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUsvBi2P7UlPymqL_OH9z5sTY7zb7WTdaNFIAGkyla-TqW_GN7HI-5FV9d1fDJunXuGzVeOuJU8L_i/pub?gid=1638204067&single=true&output=csv',
+      childOpen: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUsvBi2P7UlPymqL_OH9z5sTY7zb7WTdaNFIAGkyla-TqW_GN7HI-5FV9d1fDJunXuGzVeOuJU8L_i/pub?gid=1722425886&single=true&output=csv',
+      childClosed: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQUsvBi2P7UlPymqL_OH9z5sTY7zb7WTdaNFIAGkyla-TqW_GN7HI-5FV9d1fDJunXuGzVeOuJU8L_i/pub?gid=1753975323&single=true&output=csv'
+    };
+
+    const DEMAND_PRIORITY_COLUMNS = [
+      'Master SKU', 'Style ID / Parent SKU', 'Size', 'Category', 'Loc', 'ST CS', 'Wholesale Price',
+      'Catalog Name', 'Up Price', 'Uniware Stock', 'FBA', 'FBF', 'SJIT', 'Launch Date', '.',
+      'Manual Close / New', 'Child Remark', 'Parent Remark'
+    ];
+
     let rawData = [];
     let filteredData = [];
-    let monthChart;
-    let channelChart;
+    let monthChart = null;
+    let channelChart = null;
+    let salesEventsBound = false;
+    let demandEventsBound = false;
+
+    const demandState = {
+      activeTab: 'parent',
+      parentRows: [],
+      childRows: [],
+      sortColumn: '',
+      sortDirection: 'asc'
+    };
 
     const els = {
       monthFilter: document.getElementById('monthFilter'),
@@ -718,8 +819,32 @@
       progressText: document.getElementById('progressText'),
       progressValue: document.getElementById('progressValue'),
       progressFill: document.getElementById('progressFill'),
-      recordBadge: document.getElementById('recordBadge')
+      recordBadge: document.getElementById('recordBadge'),
+      fetchBtn: document.getElementById('fetchBtn'),
+      salesOverviewNav: document.getElementById('salesOverviewNav'),
+      demandNav: document.getElementById('demandNav'),
+      parentTabBtn: document.getElementById('parentTabBtn'),
+      childTabBtn: document.getElementById('childTabBtn'),
+      fetchDemandBtn: document.getElementById('fetchDemandBtn'),
+      demandStatus: document.getElementById('demandStatus'),
+      demandTypeFilter: document.getElementById('demandTypeFilter'),
+      demandLocFilter: document.getElementById('demandLocFilter'),
+      demandSearch: document.getElementById('demandSearch'),
+      demandResetBtn: document.getElementById('demandResetBtn'),
+      demandTableHead: document.getElementById('demandTableHead'),
+      demandTableBody: document.getElementById('demandTableBody'),
+      salesOverviewSection: document.getElementById('sales-overview-section'),
+      demandSection: document.getElementById('demand-sensing-section')
     };
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     function normalizeRow(row) {
       const month = row.Month || row.MONTH || row.month || '';
@@ -768,9 +893,7 @@
         option.value = value;
         listEl.appendChild(option);
       });
-      if (!values.includes(current)) {
-        els.skuFilter.value = current;
-      }
+      if (!values.includes(current)) els.skuFilter.value = current;
     }
 
     function aggregate(data, key) {
@@ -782,9 +905,7 @@
     }
 
     function topItems(data, key, limit = 10) {
-      return Object.entries(aggregate(data, key))
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, limit);
+      return Object.entries(aggregate(data, key)).sort((a, b) => b[1] - a[1]).slice(0, limit);
     }
 
     function formatNumber(value) {
@@ -795,7 +916,6 @@
       const totalSales = data.reduce((sum, row) => sum + row.sale, 0);
       const uniqueSku = new Set(data.map(row => row.channelSku).filter(Boolean)).size;
       const channelTotals = topItems(data, 'channel', 1);
-
       els.totalSales.textContent = formatNumber(totalSales);
       els.totalRows.textContent = formatNumber(data.length);
       els.uniqueSku.textContent = formatNumber(uniqueSku);
@@ -807,33 +927,19 @@
     function renderTopTables(data) {
       const topSku = topItems(data, 'channelSku');
       const topUniverse = topItems(data, 'universeSku');
-
-      els.topSkuTable.innerHTML = topSku.map((item, index) => `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${item[0]}</td>
-          <td>${formatNumber(item[1])}</td>
-        </tr>
-      `).join('') || '<tr><td colspan="3">No data found</td></tr>';
-
-      els.topUniverseTable.innerHTML = topUniverse.map((item, index) => `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${item[0]}</td>
-          <td>${formatNumber(item[1])}</td>
-        </tr>
-      `).join('') || '<tr><td colspan="3">No data found</td></tr>';
+      els.topSkuTable.innerHTML = topSku.map((item, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(item[0])}</td><td>${formatNumber(item[1])}</td></tr>`).join('') || '<tr><td colspan="3">No data found</td></tr>';
+      els.topUniverseTable.innerHTML = topUniverse.map((item, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(item[0])}</td><td>${formatNumber(item[1])}</td></tr>`).join('') || '<tr><td colspan="3">No data found</td></tr>';
     }
 
     function renderDetails(data) {
       els.detailTable.innerHTML = data.slice(0, 1000).map(row => `
         <tr>
-          <td>${row.month || row.monthYear}</td>
-          <td>${row.year}</td>
-          <td>${row.date}</td>
-          <td>${row.channel}</td>
-          <td>${row.channelSku}</td>
-          <td>${row.universeSku}</td>
+          <td>${escapeHtml(row.month || row.monthYear)}</td>
+          <td>${escapeHtml(row.year)}</td>
+          <td>${escapeHtml(row.date)}</td>
+          <td>${escapeHtml(row.channel)}</td>
+          <td>${escapeHtml(row.channelSku)}</td>
+          <td>${escapeHtml(row.universeSku)}</td>
           <td>${formatNumber(row.sale)}</td>
         </tr>
       `).join('') || '<tr><td colspan="7">No data found</td></tr>';
@@ -871,13 +977,8 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            x: { grid: { display: false } },
-            y: { beginAtZero: true }
-          }
+          plugins: { legend: { display: false } },
+          scales: { x: { grid: { display: false } }, y: { beginAtZero: true } }
         }
       });
 
@@ -888,19 +989,14 @@
           datasets: [{
             label: 'Sales',
             data: channelSeries.map(item => item[1]),
-            backgroundColor: [
-              '#0d5c4a', '#c9a84c', '#2d7a5f', '#c47a1a', '#6b7c75',
-              '#0f6b56', '#e8f4f0', '#b78c22', '#7ca798', '#d8c69a'
-            ],
+            backgroundColor: ['#0d5c4a', '#c9a84c', '#2d7a5f', '#c47a1a', '#6b7c75', '#0f6b56', '#e8f4f0', '#b78c22', '#7ca798', '#d8c69a'],
             borderWidth: 0
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'top' }
-          }
+          plugins: { legend: { position: 'top' } }
         }
       });
     }
@@ -928,11 +1024,15 @@
       renderDetails(filteredData);
     }
 
-    function bindEvents() {
-      document.getElementById('fetchBtn').addEventListener('click', () => {
-        setProgress(5, 'Fetching data from Google Sheet... 5%');
-        setProgress(0, 'Click Fetch Data to load from Google Sheet');
+    function bindSalesEvents() {
+      if (salesEventsBound) return;
+      salesEventsBound = true;
+
+      els.fetchBtn.addEventListener('click', loadData);
+      els.salesOverviewNav.addEventListener('click', () => {
+        els.salesOverviewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
+
       [els.monthFilter, els.yearFilter, els.channelFilter].forEach(el => {
         el.addEventListener('change', applyFilters);
       });
@@ -962,7 +1062,7 @@
       els.progressText.textContent = label || `Loading data... ${safeValue}%`;
     }
 
-    function loadData() {
+    function resetSalesDashboard() {
       if (monthChart) { monthChart.destroy(); monthChart = null; }
       if (channelChart) { channelChart.destroy(); channelChart = null; }
       rawData = [];
@@ -981,6 +1081,10 @@
       els.channelFilter.innerHTML = '<option value="">All</option>';
       els.skuFilter.value = '';
       els.skuOptions.innerHTML = '';
+    }
+
+    function loadData() {
+      resetSalesDashboard();
       setProgress(10, 'Connecting to Google Sheet... 10%');
 
       Papa.parse(CSV_URL, {
@@ -996,7 +1100,6 @@
           rawData = results.data.map(normalizeRow).filter(row => row.channel || row.channelSku || row.universeSku || row.sale);
           setProgress(90, 'Building dashboard... 90%');
           initFilters(rawData);
-          bindEvents();
           applyFilters();
           setProgress(100, `Loaded successfully · ${new Date().toLocaleString('en-IN')}`);
         },
@@ -1008,7 +1111,184 @@
       });
     }
 
-    loadData();
+    function normalizeDemandHeader(text) {
+      return String(text || '').replace(/\s+/g, ' ').replace(/\n/g, ' ').trim();
+    }
+
+    function detectHeaderRow(rows) {
+      return rows.findIndex(row => row.some(cell => normalizeDemandHeader(cell) === 'Master SKU'));
+    }
+
+    function parseDemandCsv(csvText, sourceLabel) {
+      const parsed = Papa.parse(csvText.trim(), { skipEmptyLines: true });
+      const rows = parsed.data || [];
+      const headerIndex = detectHeaderRow(rows);
+      if (headerIndex === -1) return [];
+      const headers = rows[headerIndex].map(normalizeDemandHeader);
+
+      return rows.slice(headerIndex + 1)
+        .filter(row => row.some(cell => String(cell || '').trim() !== ''))
+        .map(row => {
+          const record = {};
+          headers.forEach((header, index) => {
+            if (header) record[header] = row[index] ?? '';
+          });
+          record.__type = sourceLabel;
+          return record;
+        });
+    }
+
+    function mergeDemandColumns(rows) {
+      const seen = new Set();
+      const ordered = [];
+
+      DEMAND_PRIORITY_COLUMNS.forEach(col => {
+        if (rows.some(row => Object.prototype.hasOwnProperty.call(row, col))) {
+          ordered.push(col);
+          seen.add(col);
+        }
+      });
+
+      rows.forEach(row => {
+        Object.keys(row).forEach(key => {
+          if (!key.startsWith('__') && !seen.has(key)) {
+            seen.add(key);
+            ordered.push(key);
+          }
+        });
+      });
+
+      return ordered;
+    }
+
+    function getActiveDemandRows() {
+      return demandState.activeTab === 'parent' ? demandState.parentRows : demandState.childRows;
+    }
+
+    function fillDemandFilters(rows) {
+      const typeValues = [...new Set(rows.map(row => row.__type).filter(Boolean))].sort();
+      const locValues = [...new Set(rows.map(row => String(row['Loc'] || '').trim()).filter(Boolean))].sort();
+      fillSelect(els.demandTypeFilter, typeValues);
+      fillSelect(els.demandLocFilter, locValues);
+    }
+
+    function renderDemandTable() {
+      const rows = getActiveDemandRows();
+      const typeFilter = els.demandTypeFilter.value;
+      const locFilter = els.demandLocFilter.value;
+      const search = els.demandSearch.value.trim().toLowerCase();
+      const columns = mergeDemandColumns(rows);
+
+      let filtered = rows.filter(row => {
+        const matchesType = !typeFilter || row.__type === typeFilter;
+        const matchesLoc = !locFilter || String(row['Loc'] || '').trim() === locFilter;
+        const haystack = Object.entries(row)
+          .filter(([key]) => !key.startsWith('__'))
+          .map(([, value]) => String(value || '').toLowerCase())
+          .join(' ');
+        const matchesSearch = !search || haystack.includes(search);
+        return matchesType && matchesLoc && matchesSearch;
+      });
+
+      if (demandState.sortColumn) {
+        const sortCol = demandState.sortColumn;
+        const dir = demandState.sortDirection === 'asc' ? 1 : -1;
+        filtered = filtered.slice().sort((a, b) => String(a[sortCol] || '').localeCompare(String(b[sortCol] || ''), undefined, { numeric: true }) * dir);
+      }
+
+      els.demandTableHead.innerHTML = columns.length
+        ? columns.map(col => `<th class="sortable" data-col="${escapeHtml(col)}">${escapeHtml(col)}</th>`).join('')
+        : '<th>No columns</th>';
+
+      els.demandTableBody.innerHTML = filtered.length
+        ? filtered.map(row => `<tr>${columns.map(col => `<td>${escapeHtml(row[col] || '')}</td>`).join('')}</tr>`).join('')
+        : '<tr><td style="padding:1rem;">No matching demand data</td></tr>';
+
+      els.demandTableHead.querySelectorAll('.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = th.getAttribute('data-col');
+          if (demandState.sortColumn === col) {
+            demandState.sortDirection = demandState.sortDirection === 'asc' ? 'desc' : 'asc';
+          } else {
+            demandState.sortColumn = col;
+            demandState.sortDirection = 'asc';
+          }
+          renderDemandTable();
+        });
+      });
+    }
+
+    function renderDemandTab(tab) {
+      demandState.activeTab = tab;
+      els.parentTabBtn.classList.toggle('active', tab === 'parent');
+      els.childTabBtn.classList.toggle('active', tab === 'child');
+      els.demandTypeFilter.value = '';
+      els.demandLocFilter.value = '';
+      els.demandSearch.value = '';
+      fillDemandFilters(getActiveDemandRows());
+      renderDemandTable();
+    }
+
+    async function fetchCsvText(url) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+      return await response.text();
+    }
+
+    async function loadDemandData() {
+      els.demandStatus.textContent = 'Fetching demand sensing data...';
+
+      try {
+        const [parentOpenCsv, parentClosedCsv, childOpenCsv, childClosedCsv] = await Promise.all([
+          fetchCsvText(DEMAND_SENSING_SOURCES.parentOpen),
+          fetchCsvText(DEMAND_SENSING_SOURCES.parentClosed),
+          fetchCsvText(DEMAND_SENSING_SOURCES.childOpen),
+          fetchCsvText(DEMAND_SENSING_SOURCES.childClosed)
+        ]);
+
+        demandState.parentRows = [
+          ...parseDemandCsv(parentOpenCsv, 'Parent Level'),
+          ...parseDemandCsv(parentClosedCsv, 'Closed of Parent Level')
+        ];
+        demandState.childRows = [
+          ...parseDemandCsv(childOpenCsv, 'Demand Sensing'),
+          ...parseDemandCsv(childClosedCsv, 'Closed Demand Sensing')
+        ];
+        demandState.sortColumn = '';
+        demandState.sortDirection = 'asc';
+
+        renderDemandTab(demandState.activeTab || 'parent');
+        els.demandStatus.textContent = `Loaded Parent: ${formatNumber(demandState.parentRows.length)} rows · Child: ${formatNumber(demandState.childRows.length)} rows`;
+      } catch (error) {
+        console.error(error);
+        els.demandStatus.textContent = 'Could not load demand sensing CSV files. Please check the 4 published links.';
+      }
+    }
+
+    function bindDemandEvents() {
+      if (demandEventsBound) return;
+      demandEventsBound = true;
+
+      els.demandNav.addEventListener('click', () => {
+        els.demandSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      els.fetchDemandBtn.addEventListener('click', loadDemandData);
+      els.parentTabBtn.addEventListener('click', () => renderDemandTab('parent'));
+      els.childTabBtn.addEventListener('click', () => renderDemandTab('child'));
+      els.demandTypeFilter.addEventListener('change', renderDemandTable);
+      els.demandLocFilter.addEventListener('change', renderDemandTable);
+      els.demandSearch.addEventListener('input', renderDemandTable);
+      els.demandResetBtn.addEventListener('click', () => {
+        els.demandTypeFilter.value = '';
+        els.demandLocFilter.value = '';
+        els.demandSearch.value = '';
+        renderDemandTable();
+      });
+    }
+
+    bindSalesEvents();
+    bindDemandEvents();
+    setProgress(0, 'Click Fetch Data to load from Google Sheet');
   </script>
 </body>
 </html>
