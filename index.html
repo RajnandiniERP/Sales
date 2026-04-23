@@ -538,6 +538,7 @@
     <div class="topbar">
       <div class="topbar-title">Sales Dashboard</div>
       <div class="topbar-meta">
+        <button class="btn btn-primary" id="fetchBtn">Fetch Data</button>
         <span class="meta-pill">Live CSV Connected</span>
         <span class="meta-pill">ERP Style Theme</span>
       </div>
@@ -922,6 +923,10 @@
     }
 
     function bindEvents() {
+      document.getElementById('fetchBtn').addEventListener('click', () => {
+        setProgress(5, 'Re-fetching data... 5%');
+        loadData();
+      });
       [els.monthFilter, els.yearFilter, els.channelFilter].forEach(el => {
         el.addEventListener('change', applyFilters);
       });
