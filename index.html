@@ -32,21 +32,20 @@
     <div class="sidebar-logo"><img class="logo-img" src="Icon%20WHITE%20COLOR.png" alt="Rajnandini logo" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='flex';" /><div class="brand-mark" id="logoFallback" style="display:none;">R</div><h2>Rajnandini</h2><div class="sidebar-tagline">Sales ERP Dashboard</div></div>
     <div class="sidebar-user"><div class="user-avatar">A</div><div class="user-info"><div class="uname">Admin</div><div class="urole">Dashboard View</div></div></div>
     <div class="sec-label">Dashboard</div>
-    
-<div class="nav-item active" id="salesReportsNav"><span>🛒</span> Sales Reports <span class="nav-badge" id="salesReportsToggle">+</span></div>
-<div id="salesReportsSubmenu" style="display:none;">
-  <div class="nav-item portal-nav-item" data-portal="amazon" style="padding-left:2rem;">Amazon</div>
-  <div class="nav-item portal-nav-item" data-portal="flipkart" style="padding-left:2rem;">Flipkart</div>
-  <div class="nav-item portal-nav-item" data-portal="myntra" style="padding-left:2rem;">Myntra</div>
-  <div class="nav-item portal-nav-item" data-portal="meesho" style="padding-left:2rem;">Meesho</div>
-  <div class="nav-item portal-nav-item" data-portal="ajio" style="padding-left:2rem;">Ajio</div>
-  <div class="nav-item portal-nav-item" data-portal="limeroad" style="padding-left:2rem;">Limeroad</div>
-  <div class="nav-item portal-nav-item" data-portal="tata" style="padding-left:2rem;">Tata</div>
-  <div class="nav-item portal-nav-item" data-portal="nykaa" style="padding-left:2rem;">Nykaa</div>
-  <div class="nav-item portal-nav-item" data-portal="snapdeal" style="padding-left:2rem;">Snapdeal</div>
-  <div class="nav-item portal-nav-item" data-portal="website" style="padding-left:2rem;">Website</div>
-  <div class="nav-item portal-nav-item" data-portal="b2c" style="padding-left:2rem;">B2C</div>
-</div>
+    <div class="nav-item active" id="salesReportsNav"><span>🛒</span> Sales Reports <span class="nav-badge" id="salesReportsToggle">+</span></div>
+    <div id="salesReportsSubmenu" style="display:none;">
+      <div class="nav-item portal-nav-item" data-page="amazon" style="padding-left:2rem;">Amazon</div>
+      <div class="nav-item portal-nav-item" data-page="flipkart" style="padding-left:2rem;">Flipkart</div>
+      <div class="nav-item portal-nav-item" data-page="myntra" style="padding-left:2rem;">Myntra</div>
+      <div class="nav-item portal-nav-item" data-page="meesho" style="padding-left:2rem;">Meesho</div>
+      <div class="nav-item portal-nav-item" data-page="ajio" style="padding-left:2rem;">Ajio</div>
+      <div class="nav-item portal-nav-item" data-page="limeroad" style="padding-left:2rem;">Limeroad</div>
+      <div class="nav-item portal-nav-item" data-page="tata" style="padding-left:2rem;">Tata</div>
+      <div class="nav-item portal-nav-item" data-page="nykaa" style="padding-left:2rem;">Nykaa</div>
+      <div class="nav-item portal-nav-item" data-page="snapdeal" style="padding-left:2rem;">Snapdeal</div>
+      <div class="nav-item portal-nav-item" data-page="website" style="padding-left:2rem;">Website</div>
+      <div class="nav-item portal-nav-item" data-page="b2c" style="padding-left:2rem;">B2C</div>
+    </div>
     <div class="nav-item" id="demandNav"><span>🧠</span> Demand Sensing <span class="nav-badge">NEW</span></div>
     <div class="nav-item" id="salesOverviewNav"><span>📊</span> Sales by Google Sheet <span class="nav-badge" id="recordBadge">0</span></div>
     <div class="nav-item"><span>📦</span> SKU Performance</div><div class="nav-item"><span>🏬</span> Channel Summary</div><div class="nav-item"><span>📅</span> Monthly Trends</div>
@@ -55,9 +54,8 @@
   <div class="main">
     <div class="topbar"><div class="topbar-title">Sales Dashboard</div><div><button class="btn btn-primary" id="fetchBtn">Fetch Data</button></div></div>
     <div class="content">
-
-      <div id="reports-page"></div>
-      <div id="portal-page" style="display:none;"></div>
+      <div id="sales-reports-page" style="display:block;"></div>
+      <div id="portal-report-page" style="display:none;"></div>
       <div id="sales-page" style="display:none;">
         <div id="sales-overview-section">
           <div class="page-head"><div><h1>Sales Overview</h1><p>Live data from Google Sheets CSV</p></div><div class="progress-card" id="loadingCard"><div class="progress-head"><span id="progressText">Click Fetch Data to load from Google Sheet</span><span id="progressValue">0%</span></div><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div></div></div>
@@ -82,34 +80,34 @@ const DEMAND_PRIORITY_COLUMNS=['Master SKU','Style ID / Parent SKU','Size','Cate
 let rawData=[],filteredData=[],monthChart=null,channelChart=null,salesEventsBound=false,demandEventsBound=false;
 const demandState={activeTab:'parent',parentRows:[],childRows:[],sortColumn:'',sortDirection:'asc',page:1,pageSize:10};
 const salesTableState={topSku:{page:1,pageSize:10},topUniverse:{page:1,pageSize:10},detail:{page:1,pageSize:10}};
-const els={monthFilter:document.getElementById('monthFilter'),yearFilter:document.getElementById('yearFilter'),channelFilter:document.getElementById('channelFilter'),fromDate:document.getElementById('fromDate'),toDate:document.getElementById('toDate'),skuFilter:document.getElementById('skuFilter'),skuOptions:document.getElementById('skuOptions'),searchInput:document.getElementById('searchInput'),resetBtn:document.getElementById('resetBtn'),totalSales:document.getElementById('totalSales'),totalRows:document.getElementById('totalRows'),uniqueSku:document.getElementById('uniqueSku'),topChannel:document.getElementById('topChannel'),topChannelSales:document.getElementById('topChannelSales'),topSkuTable:document.getElementById('topSkuTable'),topUniverseTable:document.getElementById('topUniverseTable'),detailTable:document.getElementById('detailTable'),progressText:document.getElementById('progressText'),progressValue:document.getElementById('progressValue'),progressFill:document.getElementById('progressFill'),recordBadge:document.getElementById('recordBadge'),fetchBtn:document.getElementById('fetchBtn'),salesOverviewNav:document.getElementById('salesOverviewNav'),demandNav:document.getElementById('demandNav'),reportsPage:document.getElementById('reports-page'),portalPage:document.getElementById('portal-page'),salesReportsNav:document.getElementById('salesReportsNav'),salesReportsToggle:document.getElementById('salesReportsToggle'),salesReportsSubmenu:document.getElementById('salesReportsSubmenu'),parentTabBtn:document.getElementById('parentTabBtn'),childTabBtn:document.getElementById('childTabBtn'),fetchDemandBtn:document.getElementById('fetchDemandBtn'),demandStatus:document.getElementById('demandStatus'),demandTypeFilter:document.getElementById('demandTypeFilter'),demandLocFilter:document.getElementById('demandLocFilter'),demandSearch:document.getElementById('demandSearch'),demandResetBtn:document.getElementById('demandResetBtn'),demandTableHead:document.getElementById('demandTableHead'),demandTableBody:document.getElementById('demandTableBody'),salesPage:document.getElementById('sales-page'),demandPage:document.getElementById('demand-page'),demandProgressText:document.getElementById('demandProgressText'),demandProgressValue:document.getElementById('demandProgressValue'),demandProgressFill:document.getElementById('demandProgressFill'),demandLastUpdated:document.getElementById('demandLastUpdated'),topSkuPageSize:document.getElementById('topSkuPageSize'),topUniversePageSize:document.getElementById('topUniversePageSize'),detailPageSize:document.getElementById('detailPageSize'),demandPageSize:document.getElementById('demandPageSize'),topSkuPager:document.getElementById('topSkuPager'),topUniversePager:document.getElementById('topUniversePager'),detailPager:document.getElementById('detailPager'),demandPager:document.getElementById('demandPager'),downloadTopSkuBtn:document.getElementById('downloadTopSkuBtn'),downloadTopUniverseBtn:document.getElementById('downloadTopUniverseBtn'),downloadDetailBtn:document.getElementById('downloadDetailBtn'),downloadDemandBtn:document.getElementById('downloadDemandBtn')};
+const els={monthFilter:document.getElementById('monthFilter'),yearFilter:document.getElementById('yearFilter'),channelFilter:document.getElementById('channelFilter'),fromDate:document.getElementById('fromDate'),toDate:document.getElementById('toDate'),skuFilter:document.getElementById('skuFilter'),skuOptions:document.getElementById('skuOptions'),searchInput:document.getElementById('searchInput'),resetBtn:document.getElementById('resetBtn'),totalSales:document.getElementById('totalSales'),totalRows:document.getElementById('totalRows'),uniqueSku:document.getElementById('uniqueSku'),topChannel:document.getElementById('topChannel'),topChannelSales:document.getElementById('topChannelSales'),topSkuTable:document.getElementById('topSkuTable'),topUniverseTable:document.getElementById('topUniverseTable'),detailTable:document.getElementById('detailTable'),progressText:document.getElementById('progressText'),progressValue:document.getElementById('progressValue'),progressFill:document.getElementById('progressFill'),recordBadge:document.getElementById('recordBadge'),fetchBtn:document.getElementById('fetchBtn'),salesOverviewNav:document.getElementById('salesOverviewNav'),demandNav:document.getElementById('demandNav'),salesReportsNav:document.getElementById('salesReportsNav'),salesReportsToggle:document.getElementById('salesReportsToggle'),salesReportsSubmenu:document.getElementById('salesReportsSubmenu'),salesReportsPage:document.getElementById('sales-reports-page'),portalReportPage:document.getElementById('portal-report-page'),parentTabBtn:document.getElementById('parentTabBtn'),childTabBtn:document.getElementById('childTabBtn'),fetchDemandBtn:document.getElementById('fetchDemandBtn'),demandStatus:document.getElementById('demandStatus'),demandTypeFilter:document.getElementById('demandTypeFilter'),demandLocFilter:document.getElementById('demandLocFilter'),demandSearch:document.getElementById('demandSearch'),demandResetBtn:document.getElementById('demandResetBtn'),demandTableHead:document.getElementById('demandTableHead'),demandTableBody:document.getElementById('demandTableBody'),salesPage:document.getElementById('sales-page'),demandPage:document.getElementById('demand-page'),demandProgressText:document.getElementById('demandProgressText'),demandProgressValue:document.getElementById('demandProgressValue'),demandProgressFill:document.getElementById('demandProgressFill'),demandLastUpdated:document.getElementById('demandLastUpdated'),topSkuPageSize:document.getElementById('topSkuPageSize'),topUniversePageSize:document.getElementById('topUniversePageSize'),detailPageSize:document.getElementById('detailPageSize'),demandPageSize:document.getElementById('demandPageSize'),topSkuPager:document.getElementById('topSkuPager'),topUniversePager:document.getElementById('topUniversePager'),detailPager:document.getElementById('detailPager'),demandPager:document.getElementById('demandPager'),downloadTopSkuBtn:document.getElementById('downloadTopSkuBtn'),downloadTopUniverseBtn:document.getElementById('downloadTopUniverseBtn'),downloadDetailBtn:document.getElementById('downloadDetailBtn'),downloadDemandBtn:document.getElementById('downloadDemandBtn')};
 function escapeHtml(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function showPage(page){
-  const isReports=page==='reports';
-  const isSales=page==='sales';
-  const isDemand=page==='demand';
-  const isPortal=page&&page.startsWith('portal-');
+  const isSales = page === 'sales';
+  const isDemand = page === 'demand';
+  const isReports = page === 'reports';
+  const isPortal = page && page.indexOf('portal:') === 0;
 
-  if(els.reportsPage)els.reportsPage.style.display=isReports?'block':'none';
-  if(els.portalPage)els.portalPage.style.display=isPortal?'block':'none';
-  els.salesPage.style.display=isSales?'block':'none';
-  els.demandPage.style.display=isDemand?'block':'none';
+  if(els.salesReportsPage) els.salesReportsPage.style.display = isReports ? 'block' : 'none';
+  if(els.portalReportPage) els.portalReportPage.style.display = isPortal ? 'block' : 'none';
+  els.salesPage.style.display = isSales ? 'block' : 'none';
+  els.demandPage.style.display = isDemand ? 'block' : 'none';
 
-  if(els.fetchBtn)els.fetchBtn.style.display=isSales?'inline-block':'none';
+  if(els.fetchBtn) els.fetchBtn.style.display = isSales ? 'inline-block' : 'none';
 
-  if(els.salesReportsNav)els.salesReportsNav.classList.toggle('active',isReports);
-  els.salesOverviewNav.classList.toggle('active',isSales);
-  els.demandNav.classList.toggle('active',isDemand);
+  if(els.salesReportsNav) els.salesReportsNav.classList.toggle('active', isReports);
+  els.salesOverviewNav.classList.toggle('active', isSales);
+  els.demandNav.classList.toggle('active', isDemand);
 
   document.querySelectorAll('.portal-nav-item').forEach(item=>{
-    item.classList.toggle('active',isPortal&&item.dataset.portal===page.replace('portal-',''));
+    item.classList.toggle('active', isPortal && item.getAttribute('data-page') === page.replace('portal:',''));
   });
 
-  if(isPortal&&els.portalPage){els.portalPage.innerHTML='';}
-  if(isReports&&els.reportsPage){els.reportsPage.innerHTML='';}
+  if(isReports && els.salesReportsPage) els.salesReportsPage.innerHTML = '';
+  if(isPortal && els.portalReportPage) els.portalReportPage.innerHTML = '';
 
-  window.scrollTo({top:0,behavior:'smooth'})
-})}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 function setProgress(value,label){const v=Math.max(0,Math.min(100,value));els.progressFill.style.width=`${v}%`;els.progressValue.textContent=`${v}%`;els.progressText.textContent=label||`Loading data... ${v}%`}
 function setDemandProgress(value,label){const v=Math.max(0,Math.min(100,value));els.demandProgressFill.style.width=`${v}%`;els.demandProgressValue.textContent=`${v}%`;els.demandProgressText.textContent=label||`Loading demand data... ${v}%`}
 function formatNumber(v){return new Intl.NumberFormat('en-IN').format(v||0)}
@@ -141,19 +139,59 @@ function renderCharts(data){const monthSeries=buildMonthSeries(data),channelSeri
 function applyFilters(){salesTableState.topSku.page=1;salesTableState.topUniverse.page=1;salesTableState.detail.page=1;const month=els.monthFilter.value,year=els.yearFilter.value,channel=els.channelFilter.value,sku=els.skuFilter.value.trim().toLowerCase(),search=els.searchInput.value.trim().toLowerCase(),fromDate=els.fromDate.value?new Date(els.fromDate.value+'T00:00:00'):null,toDate=els.toDate.value?new Date(els.toDate.value+'T23:59:59'):null;filteredData=rawData.filter(r=>{const rowDate=r.dateObj;const m1=!month||r.month===month,m2=!year||r.year===year,m3=!channel||r.channel===channel,m4=!sku||r.channelSku.toLowerCase().includes(sku),m5=!search||r.searchText.includes(search),m6=(!fromDate||(rowDate&&rowDate>=fromDate))&&(!toDate||(rowDate&&rowDate<=toDate));return m1&&m2&&m3&&m4&&m5&&m6});requestAnimationFrame(()=>{renderCards(filteredData);renderCharts(filteredData);renderTopTables(filteredData);renderDetails(filteredData)})}
 function debounce(fn,delay=350){let t;return(...args)=>{clearTimeout(t);t=setTimeout(()=>fn(...args),delay)}}
 const debouncedApplyFilters=debounce(applyFilters,350);
-function bindSalesEvents(){if(salesEventsBound)return;salesEventsBound=true;els.fetchBtn.addEventListener('click',loadData);
-if(els.salesReportsNav){
-  els.salesReportsNav.addEventListener('click',()=>{
-    const isOpen=els.salesReportsSubmenu.style.display==='block';
-    els.salesReportsSubmenu.style.display=isOpen?'none':'block';
-    els.salesReportsToggle.textContent=isOpen?'+':'-';
-    showPage('reports');
+function bindSalesEvents(){
+  if(salesEventsBound)return;
+  salesEventsBound=true;
+
+  els.fetchBtn.addEventListener('click',loadData);
+
+  if(els.salesReportsNav){
+    els.salesReportsNav.addEventListener('click',()=>{
+      const isOpen = els.salesReportsSubmenu.style.display === 'block';
+      els.salesReportsSubmenu.style.display = isOpen ? 'none' : 'block';
+      els.salesReportsToggle.textContent = isOpen ? '+' : '-';
+      showPage('reports');
+    });
+  }
+
+  document.querySelectorAll('.portal-nav-item').forEach(item=>{
+    item.addEventListener('click',()=>{
+      showPage('portal:' + item.getAttribute('data-page'));
+    });
+  });
+
+  els.salesOverviewNav.addEventListener('click',()=>showPage('sales'));
+
+  els.topSkuPageSize.addEventListener('change',()=>{
+    salesTableState.topSku.pageSize=Number(els.topSkuPageSize.value);
+    salesTableState.topSku.page=1;
+    renderTopTables(filteredData);
+  });
+  els.topUniversePageSize.addEventListener('change',()=>{
+    salesTableState.topUniverse.pageSize=Number(els.topUniversePageSize.value);
+    salesTableState.topUniverse.page=1;
+    renderTopTables(filteredData);
+  });
+  els.detailPageSize.addEventListener('change',()=>{
+    salesTableState.detail.pageSize=Number(els.detailPageSize.value);
+    salesTableState.detail.page=1;
+    renderDetails(filteredData);
+  });
+
+  [els.monthFilter,els.yearFilter,els.channelFilter,els.fromDate,els.toDate].forEach(el=>el.addEventListener('change',applyFilters));
+  els.skuFilter.addEventListener('input',debouncedApplyFilters);
+  els.searchInput.addEventListener('input',debouncedApplyFilters);
+  els.resetBtn.addEventListener('click',()=>{
+    els.monthFilter.value='';
+    els.yearFilter.value='';
+    els.channelFilter.value='';
+    els.fromDate.value='';
+    els.toDate.value='';
+    els.skuFilter.value='';
+    els.searchInput.value='';
+    applyFilters();
   });
 }
-document.querySelectorAll('.portal-nav-item').forEach(item=>{
-  item.addEventListener('click',()=>showPage('portal-'+item.dataset.portal));
-});
-els.salesOverviewNav.addEventListener('click',()=>showPage('sales'));els.topSkuPageSize.addEventListener('change',()=>{salesTableState.topSku.pageSize=Number(els.topSkuPageSize.value);salesTableState.topSku.page=1;renderTopTables(filteredData)});els.topUniversePageSize.addEventListener('change',()=>{salesTableState.topUniverse.pageSize=Number(els.topUniversePageSize.value);salesTableState.topUniverse.page=1;renderTopTables(filteredData)});els.detailPageSize.addEventListener('change',()=>{salesTableState.detail.pageSize=Number(els.detailPageSize.value);salesTableState.detail.page=1;renderDetails(filteredData)});[els.monthFilter,els.yearFilter,els.channelFilter,els.fromDate,els.toDate].forEach(el=>el.addEventListener('change',applyFilters));els.skuFilter.addEventListener('input',debouncedApplyFilters);els.searchInput.addEventListener('input',debouncedApplyFilters);els.resetBtn.addEventListener('click',()=>{els.monthFilter.value='';els.yearFilter.value='';els.channelFilter.value='';els.fromDate.value='';els.toDate.value='';els.skuFilter.value='';els.searchInput.value='';applyFilters()})}
 function initFilters(data){fillSelect(els.monthFilter,uniqueValues(data,'month'));fillSelect(els.yearFilter,uniqueValues(data,'year'));fillSelect(els.channelFilter,uniqueValues(data,'channel'));fillDatalist(els.skuOptions,uniqueValues(data,'channelSku'))}
 function prepareRows(rows){rawData=rows.map(r=>{if(r.dateObj&&r.searchText)return r;const rec={month:String(r.month||'').trim(),year:String(r.year||'').trim(),date:String(r.date||'').trim(),sale:Number(r.sale||0)||0,channel:String(r.channel||'').trim(),channelSku:String(r.channelSku||'').trim(),universeSku:String(r.universeSku||'').trim(),monthYear:String(r.monthYear||'').trim(),raw:r.raw||{}};rec.dateObj=parseSaleDate(rec.date);rec.searchText=`${rec.channel} ${rec.channelSku} ${rec.universeSku} ${rec.month} ${rec.year} ${rec.date}`.toLowerCase();return rec}).filter(r=>r.channel||r.channelSku||r.universeSku||r.sale)}
 function compactSalesRows(rows){return rows.map(r=>[r.month,r.year,r.date,r.sale,r.channel,r.channelSku,r.universeSku,r.monthYear])}
