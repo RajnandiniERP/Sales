@@ -106,7 +106,44 @@ function expandSalesRows(rows){return rows.map(a=>({month:a[0]||'',year:a[1]||''
 function saveSalesCache(){try{localStorage.setItem(SALES_CACHE_KEY,JSON.stringify({savedAt:new Date().toISOString(),rows:compactSalesRows(rawData)}))}catch(e){console.warn('Sales cache could not be saved',e)}}
 function loadCachedSalesData(){try{const cached=localStorage.getItem(SALES_CACHE_KEY);if(!cached)return false;const payload=JSON.parse(cached);if(!payload||!Array.isArray(payload.rows)||!payload.rows.length)return false;prepareRows(expandSalesRows(payload.rows));initFilters(rawData);applyFilters();const savedAt=payload.savedAt?new Date(payload.savedAt):null;const label=savedAt&&!isNaN(savedAt.getTime())?`Showing saved data · Last updated: ${savedAt.toLocaleString('en-IN')} · Click Fetch Data for latest`:`Showing saved data · Click Fetch Data for latest`;setProgress(100,label);return true}catch(e){console.warn('Sales cache could not be loaded',e);return false}}
 function resetSalesDashboard(){if(monthChart){monthChart.destroy();monthChart=null}if(channelChart){channelChart.destroy();channelChart=null}rawData=[];filteredData=[];els.totalSales.textContent='0';els.totalRows.textContent='0';els.uniqueSku.textContent='0';els.topChannel.textContent='-';els.topChannelSales.textContent='0 sales';els.recordBadge.textContent='0';els.topSkuTable.innerHTML='<tr><td colspan="3">No data loaded</td></tr>';els.topUniverseTable.innerHTML='<tr><td colspan="3">No data loaded</td></tr>';els.detailTable.innerHTML='<tr><td colspan="7">No data loaded</td></tr>';els.monthFilter.innerHTML='<option value="">All</option>';els.yearFilter.innerHTML='<option value="">All</option>';els.channelFilter.innerHTML='<option value="">All</option>';els.fromDate.value='';els.toDate.value='';els.skuFilter.value='';els.skuOptions.innerHTML=''}
-function loadData(){els.fetchBtn.disabled=true;els.fetchBtn.textContent='Loading...';setProgress(10,rawData.length?'Refreshing latest data... old data is still visible':'Connecting to Google Sheet... 10%');Papa.parse(CSV_URL,{download:true,header:true,skipEmptyLines:true,worker:true,fastMode:true,beforeFirstChunk:(c)=>{setProgress(35,'Downloading latest CSV... 35%');return c},complete:(results)=>{setProgress(70,'Processing latest records... 70%');setTimeout(()=>{prepareRows(results.data.map(normalizeRow));setProgress(90,'Building dashboard and saving cache... 90%');initFilters(rawData);applyFilters();saveSalesCache();setProgress(100,`Latest data loaded and saved · ${new Date().toLocaleString('en-IN')}`);els.fetchBtn.disabled=false;els.fetchBtn.textContent='Fetch Data'},0)},error:(e)=>{console.error(e);setProgress(100,rawData.length?'Refresh failed · showing saved data':'Failed to load data');els.fetchBtn.disabled=false;els.fetchBtn.textContent='Fetch Data';alert('Could not load CSV data. If saved data exists, it will remain visible.')}})}
+function loadData(){
+  els.fetchBtn.disabled=true;
+  els.fetchBtn.textContent='Loading...';
+  setProgress(10,rawData.length?'Refreshing latest data... saved data is still visible':'Connecting to Google Sheet... 10%');
+
+  const freshUrl=CSV_URL+(CSV_URL.includes('?')?'&':'?')+'cacheBust='+Date.now();
+
+  fetch(freshUrl,{cache:'no-store'})
+    .then(res=>{
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      setProgress(35,'Downloading latest CSV... 35%');
+      return res.text();
+    })
+    .then(csvText=>{
+      setProgress(60,'Parsing latest records... 60%');
+      const results=Papa.parse(csvText,{header:true,skipEmptyLines:true});
+      if(results.errors&&results.errors.length){
+        console.warn('CSV parse warnings:',results.errors.slice(0,5));
+      }
+      const rows=(results.data||[]).map(normalizeRow);
+      prepareRows(rows);
+      if(!rawData.length)throw new Error('No rows found in CSV');
+      setProgress(85,'Building dashboard... 85%');
+      initFilters(rawData);
+      applyFilters();
+      saveSalesCache();
+      setProgress(100,`Latest data loaded and saved · ${new Date().toLocaleString('en-IN')}`);
+    })
+    .catch(e=>{
+      console.error(e);
+      setProgress(100,rawData.length?'Refresh failed · showing saved data':'Failed to load data');
+      alert('Could not load latest CSV data. Saved data will remain visible if available.');
+    })
+    .finally(()=>{
+      els.fetchBtn.disabled=false;
+      els.fetchBtn.textContent='Fetch Data';
+    });
+}
 function normalizeDemandHeader(text){return String(text||'').replace(/\s+/g,' ').replace(/\n/g,' ').trim()} function detectHeaderRow(rows){return rows.findIndex(row=>row.some(cell=>normalizeDemandHeader(cell)==='Master SKU'))}
 function parseDemandCsv(csvText,sourceLabel){const parsed=Papa.parse(csvText.trim(),{skipEmptyLines:true}),rows=parsed.data||[],headerIndex=detectHeaderRow(rows);if(headerIndex===-1)return[];const headers=rows[headerIndex].map(normalizeDemandHeader);return rows.slice(headerIndex+1).filter(r=>r.some(c=>String(c||'').trim()!=='' )).map(row=>{const rec={};headers.forEach((h,i)=>{if(h)rec[h]=row[i]??''});rec.__type=sourceLabel;return rec})}
 function mergeDemandColumns(rows){const seen=new Set(),ordered=[];DEMAND_PRIORITY_COLUMNS.forEach(col=>{if(rows.some(r=>Object.prototype.hasOwnProperty.call(r,col))){ordered.push(col);seen.add(col)}});rows.forEach(r=>Object.keys(r).forEach(k=>{if(!k.startsWith('__')&&!seen.has(k)){seen.add(k);ordered.push(k)}}));return ordered}
