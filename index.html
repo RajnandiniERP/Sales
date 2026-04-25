@@ -474,59 +474,286 @@ bindSalesEvents();bindDemandEvents();setProgress(0,'Loading saved data...');if(!
 
 <script>
 (function(){
-  const GLOBAL_FALLBACK = {
-    url: "https://script.google.com/macros/s/AKfycbxMD_hUnXptItPoU8MlJJfnTk6t4HIiX5cuNXhbHvISGkSinbuzR83rRWCgoNiKrIyjLg/exec",
-    amazonFolderId: "1VL60pbxPrZKTFwX0IPHwV4Ddpahu8IHh"
-  };
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxMD_hUnXptItPoU8MlJJfnTk6t4HIiX5cuNXhbHvISGkSinbuzR83rRWCgoNiKrIyjLg/exec";
+  const AMAZON_FOLDER_ID = "1VL60pbxPrZKTFwX0IPHwV4Ddpahu8IHh";
 
-  window.portalGlobalConfig = Object.assign({}, GLOBAL_FALLBACK);
+  let portalState = {summary:null, files:[], rows:[], status:"Ready. Click Scan Drive to scan Google Drive."};
 
-  async function portalCall(action, params={}){
-    const url = new URL(window.portalGlobalConfig.url || GLOBAL_FALLBACK.url);
-    url.searchParams.set('action', action);
-    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
-    const res = await fetch(url.toString(), {cache:'no-store'});
-    if(!res.ok) throw new Error('Apps Script HTTP '+res.status);
+  function money(n){return "₹"+new Intl.NumberFormat("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n||0));}
+  function num(n){return new Intl.NumberFormat("en-IN").format(Number(n||0));}
+  function safe(v){return String(v??"").replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s]));}
+  function pill(v, cls){return `<span class="status-pill ${cls||"status-loaded"}">${safe(v)}</span>`;}
+
+  async function callBackend(action, params={}){
+    const url = new URL(APPS_SCRIPT_URL);
+    url.searchParams.set("action", action);
+    url.searchParams.set("folderId", AMAZON_FOLDER_ID);
+    Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
+    const res = await fetch(url.toString(), {cache:"no-store"});
+    if(!res.ok) throw new Error("Apps Script HTTP "+res.status);
     const data = await res.json();
-    if(!data.ok) throw new Error(data.error || 'Apps Script error');
+    if(!data.ok) throw new Error(data.error || "Apps Script error");
     return data;
   }
 
-  async function loadGlobalPortalConfig(){
-    try{
-      const data = await portalCall('getConfig');
-      window.portalGlobalConfig = {
-        url: data.config?.scriptUrl || GLOBAL_FALLBACK.url,
-        amazonFolderId: data.config?.amazonFolderId || GLOBAL_FALLBACK.amazonFolderId
-      };
-    }catch(e){
-      window.portalGlobalConfig = Object.assign({}, GLOBAL_FALLBACK);
+  function ensureStyles(){
+    if(document.getElementById("backendPortalStyles")) return;
+    const style=document.createElement("style");
+    style.id="backendPortalStyles";
+    style.textContent=`
+      .portal-title{font-family:"Cormorant Garamond",serif;font-size:1.45rem;color:var(--teal-dark);font-weight:700;margin-bottom:1rem}
+      .portal-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.3rem}
+      .portal-card{border-radius:12px;padding:1.1rem 1.25rem;color:#fff;box-shadow:var(--shadow)}
+      .portal-card .small{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;opacity:.8;font-weight:700;text-align:center}
+      .portal-card .big{font-family:"Cormorant Garamond",serif;font-size:2rem;font-weight:700;text-align:center;margin:.35rem 0 0}
+      .portal-card .sub{text-align:center;font-size:.72rem;opacity:.85}
+      .portal-green{background:linear-gradient(135deg,#14593c,#2d7a5f)}
+      .portal-red{background:linear-gradient(135deg,#8f1d1d,#c0392b)}
+      .portal-orange{background:linear-gradient(135deg,#8d3f05,#d87800)}
+      .portal-blue{background:linear-gradient(135deg,#24436f,#2763d8)}
+      .portal-actions{display:flex;gap:.6rem;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+      .status-pill{border-radius:999px;padding:3px 8px;font-weight:700;font-size:.68rem;display:inline-block}
+      .status-loaded{background:#c6f6d5;color:#0d5c4a}
+      .status-pending{background:#fff0bf;color:#8a5a00}
+      .status-error{background:#ffd4d4;color:#8f1d1d}
+      .type-pill{background:#efe6ff;color:#6a38b4;border-radius:999px;padding:3px 8px;font-size:.68rem;font-weight:700}
+      @media (max-width:1200px){.portal-summary{grid-template-columns:repeat(2,1fr)}}
+      @media (max-width:860px){.portal-summary{grid-template-columns:1fr}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensurePages(){
+    let content=document.querySelector(".content");
+    if(!content) return;
+    let reports=document.getElementById("sales-reports-page");
+    if(!reports){
+      reports=document.createElement("div");
+      reports.id="sales-reports-page";
+      content.insertBefore(reports, content.firstChild);
     }
-
-    const urlInput = document.getElementById('portalBackendUrl');
-    const folderInput = document.getElementById('amazonFolderId');
-    if(urlInput) urlInput.value = window.portalGlobalConfig.url;
-    if(folderInput) folderInput.value = window.portalGlobalConfig.amazonFolderId;
+    let portal=document.getElementById("portal-page");
+    if(!portal){
+      portal=document.createElement("div");
+      portal.id="portal-page";
+      portal.style.display="none";
+      content.insertBefore(portal, reports.nextSibling);
+    }
+    const sales=document.getElementById("sales-page");
+    if(sales) sales.style.display="none";
+    const demand=document.getElementById("demand-page");
+    if(demand) demand.style.display="none";
   }
 
-  async function saveGlobalPortalConfig(){
-    const scriptUrl = document.getElementById('portalBackendUrl')?.value?.trim() || GLOBAL_FALLBACK.url;
-    const amazonFolderId = document.getElementById('amazonFolderId')?.value?.trim() || GLOBAL_FALLBACK.amazonFolderId;
-    const data = await portalCall('saveConfig', {scriptUrl, amazonFolderId});
-    window.portalGlobalConfig = {url: data.config.scriptUrl, amazonFolderId: data.config.amazonFolderId};
-    return data.config;
+  function ensureNav(){
+    let oldReports = document.querySelector("#salesReportsNav");
+    const salesOverview = document.getElementById("salesOverviewNav");
+    if(!oldReports){
+      const navItems=[...document.querySelectorAll(".nav-item")];
+      oldReports = navItems.find(n=>n.textContent.includes("Sales Reports"));
+      if(oldReports) oldReports.id="salesReportsNav";
+    }
+    if(oldReports){
+      oldReports.innerHTML = '<span>🛒</span> Sales Reports <span class="nav-badge" id="salesReportsToggle">+</span>';
+      let submenu=document.getElementById("salesReportsSubmenu");
+      if(!submenu){
+        submenu=document.createElement("div");
+        submenu.id="salesReportsSubmenu";
+        oldReports.insertAdjacentElement("afterend", submenu);
+      }
+      submenu.style.display="none";
+      submenu.innerHTML = `
+        <div class="nav-item portal-nav-item" data-portal="amazon" style="padding-left:2rem;">Amazon</div>
+        <div class="nav-item portal-nav-item" data-portal="flipkart" style="padding-left:2rem;">Flipkart</div>
+        <div class="nav-item portal-nav-item" data-portal="myntra" style="padding-left:2rem;">Myntra</div>
+        <div class="nav-item portal-nav-item" data-portal="meesho" style="padding-left:2rem;">Meesho</div>
+        <div class="nav-item portal-nav-item" data-portal="ajio" style="padding-left:2rem;">Ajio</div>
+        <div class="nav-item portal-nav-item" data-portal="limeroad" style="padding-left:2rem;">Limeroad</div>
+        <div class="nav-item portal-nav-item" data-portal="tata" style="padding-left:2rem;">Tata</div>
+        <div class="nav-item portal-nav-item" data-portal="nykaa" style="padding-left:2rem;">Nykaa</div>
+        <div class="nav-item portal-nav-item" data-portal="snapdeal" style="padding-left:2rem;">Snapdeal</div>
+        <div class="nav-item portal-nav-item" data-portal="website" style="padding-left:2rem;">Website</div>
+        <div class="nav-item portal-nav-item" data-portal="b2c" style="padding-left:2rem;">B2C</div>`;
+      oldReports.onclick = function(e){
+        e.preventDefault();
+        const open=submenu.style.display==="block";
+        submenu.style.display=open?"none":"block";
+        document.getElementById("salesReportsToggle").textContent=open?"+":"-";
+        showPage("reports");
+      };
+    }
+    if(salesOverview) salesOverview.classList.remove("active");
   }
 
-  window.portalGlobal = {
-    call: portalCall,
-    loadConfig: loadGlobalPortalConfig,
-    saveConfig: saveGlobalPortalConfig,
-    fallback: GLOBAL_FALLBACK
+  function renderAmazon(){
+    ensureStyles();
+    const page=document.getElementById("portal-page");
+    if(!page) return;
+    const s=portalState.summary||{};
+    const files=portalState.files||[];
+    const rows=portalState.rows||[];
+    page.innerHTML = `
+      <div class="portal-title">🛍️ Portal Sale (Amazon)</div>
+      <div class="portal-summary">
+        <div class="portal-card portal-green"><div class="small">Sale</div><div class="big">${num(s.saleQty||0)}</div><div class="sub">units</div><hr style="border-color:rgba(255,255,255,.2)"><div class="big" style="font-size:1.1rem">${money(s.saleAmt||0)}</div></div>
+        <div class="portal-card portal-red"><div class="small">Return</div><div class="big">${num(s.returnQty||0)}</div><div class="sub">units</div><hr style="border-color:rgba(255,255,255,.2)"><div class="big" style="font-size:1.1rem">${money(s.returnAmt||0)}</div></div>
+        <div class="portal-card portal-orange"><div class="small">Net Sale</div><div class="big">${num((s.saleQty||0)-(s.returnQty||0))}</div><div class="sub">net units</div><hr style="border-color:rgba(255,255,255,.2)"><div class="big" style="font-size:1.1rem">${money((s.saleAmt||0)-(s.returnAmt||0))}</div></div>
+        <div class="portal-card portal-blue"><div class="small">Files / Rows</div><div class="big">${num(s.fileCount||files.length||0)}</div><div class="sub">${num(s.totalRows||0)} rows scanned</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-head-title">📁 Portal Sale Files</span>
+          <div class="portal-actions">
+            <button class="btn btn-primary" id="scanAmazonDriveBtn" type="button">🔄 Scan Drive</button>
+            <button class="btn btn-gold" id="loadAmazonRowsBtn" type="button">Load Latest Rows</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="footer-note" id="amazonStatus">${safe(portalState.status)}</div>
+          <div class="table-wrap" style="max-height:360px;">
+            <table>
+              <thead><tr><th>Portal</th><th>Year</th><th>File</th><th>Type</th><th>Month/Year</th><th>Rows</th><th>Size MB</th><th>Modified</th><th>Status</th></tr></thead>
+              <tbody>
+                ${files.length?files.map(f=>`<tr><td>Amazon</td><td>${safe(f.year)}</td><td>${safe(f.name)}</td><td><span class="type-pill">${safe(f.type)}</span></td><td>${safe(f.monthYear)}</td><td>${num(f.rows||0)}</td><td>${safe(f.sizeMb||"")}</td><td>${safe(f.modified)}</td><td>${pill(f.status||"Scanned")}</td></tr>`).join(""):'<tr><td colspan="9">No scan yet. Click Scan Drive. It will scan Google Drive directly, no local folder popup.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="card-head-title">⚙️ Transaction Type Mapping</span><span style="font-size:.75rem;color:var(--muted)">Shipment = Sale · Refund/Return = Return · Other = Ignore</span></div>
+        <div class="card-body">
+          <span class="status-pill status-pending">Cancel → Ignore</span>
+          <span class="status-pill status-loaded">FreeReplacement → Sale</span>
+          <span class="status-pill status-loaded">Shipment → Sale</span>
+          <span class="status-pill status-pending">Refund → Return</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="card-head-title">📊 Portal Sale Data</span><button class="btn btn-gold" id="exportAmazonRowsBtn" type="button">Export CSV</button></div>
+        <div class="card-body">
+          <div class="table-wrap" style="max-height:520px;">
+            <table>
+              <thead><tr><th>#</th><th>Portal</th><th>File</th><th>Type</th><th>Transaction</th><th>SKU</th><th>Invoice Date</th><th>Qty</th><th>Invoice Amt</th><th>Taxable Value</th><th>Fulfillment</th></tr></thead>
+              <tbody>
+                ${rows.length?rows.map((r,i)=>`<tr><td>${i+1}</td><td>Amazon</td><td>${safe(r.fileName)}</td><td>${safe(r.fileType)}</td><td>${safe(r.transactionType)}</td><td>${safe(r.sku)}</td><td>${safe(r.invoiceDate)}</td><td>${safe(r.qty)}</td><td>${money(r.invoiceAmt)}</td><td>${money(r.taxableValue)}</td><td>${safe(r.fulfillment)}</td></tr>`).join(""):'<tr><td colspan="11">No rows loaded yet.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+          <div class="footer-note">This page uses Apps Script backend. It does not open or upload any local folder.</div>
+        </div>
+      </div>`;
+
+    document.getElementById("scanAmazonDriveBtn").onclick=async()=>{
+      try{
+        portalState.status="Scanning Google Drive folder...";
+        renderAmazon();
+        const data=await callBackend("scanAmazon");
+        portalState.files=data.files||[];
+        portalState.summary=data.summary||{};
+        portalState.status="Drive scan completed · "+new Date().toLocaleString("en-IN");
+        localStorage.setItem("amazonBackendScanCache", JSON.stringify(portalState));
+        renderAmazon();
+      }catch(e){
+        portalState.status="Error: "+e.message;
+        renderAmazon();
+      }
+    };
+
+    document.getElementById("loadAmazonRowsBtn").onclick=async()=>{
+      try{
+        portalState.status="Loading latest rows from Apps Script...";
+        renderAmazon();
+        const data=await callBackend("rowsAmazon",{limit:500});
+        portalState.rows=data.rows||[];
+        portalState.status="Rows loaded · "+new Date().toLocaleString("en-IN");
+        renderAmazon();
+      }catch(e){
+        portalState.status="Error: "+e.message;
+        renderAmazon();
+      }
+    };
+
+    document.getElementById("exportAmazonRowsBtn").onclick=()=>{
+      const rows=portalState.rows||[];
+      if(!rows.length){alert("No rows loaded");return;}
+      const headers=["fileName","fileType","transactionType","sku","invoiceDate","qty","invoiceAmt","taxableValue","fulfillment"];
+      const csv=[headers.join(",")].concat(rows.map(r=>headers.map(h=>`"${String(r[h]??"").replace(/"/g,'""')}"`).join(","))).join("\n");
+      const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");a.href=url;a.download="amazon_loaded_rows.csv";a.click();URL.revokeObjectURL(url);
+    };
+  }
+
+  window.showPage=function(page){
+    ensurePages();
+    const salesPage=document.getElementById("sales-page");
+    const demandPage=document.getElementById("demand-page");
+    const reportsPage=document.getElementById("sales-reports-page");
+    const portalPage=document.getElementById("portal-page");
+    const fetchBtn=document.getElementById("fetchBtn");
+    const isSales=page==="sales", isDemand=page==="demand", isReports=page==="reports", isPortal=page&&page.startsWith("portal:");
+    if(salesPage)salesPage.style.display=isSales?"block":"none";
+    if(demandPage)demandPage.style.display=isDemand?"block":"none";
+    if(reportsPage)reportsPage.style.display=isReports?"block":"none";
+    if(portalPage)portalPage.style.display=isPortal?"block":"none";
+    if(fetchBtn)fetchBtn.style.display=isSales?"inline-block":"none";
+    document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+    const reportsNav=document.getElementById("salesReportsNav");
+    const salesNav=document.getElementById("salesOverviewNav");
+    const demandNav=document.getElementById("demandNav");
+    if(isReports&&reportsNav)reportsNav.classList.add("active");
+    if(isSales&&salesNav)salesNav.classList.add("active");
+    if(isDemand&&demandNav)demandNav.classList.add("active");
+    document.querySelectorAll(".portal-nav-item").forEach(item=>{
+      item.classList.toggle("active", isPortal && item.dataset.portal===page.replace("portal:",""));
+    });
+    if(isReports&&reportsPage)reportsPage.innerHTML="";
+    if(isPortal){
+      const portal=page.replace("portal:","");
+      if(portal==="amazon")renderAmazon();
+      else if(portalPage)portalPage.innerHTML="";
+    }
+    window.scrollTo({top:0,behavior:"smooth"});
   };
 
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(loadGlobalPortalConfig, 800);
-  });
+  function initBackendPortal(){
+    ensureStyles();
+    ensurePages();
+    ensureNav();
+    const fetchBtn=document.getElementById("fetchBtn");
+    if(fetchBtn) fetchBtn.style.display="none";
+    const reportsNav=document.getElementById("salesReportsNav");
+    const submenu=document.getElementById("salesReportsSubmenu");
+    const toggle=document.getElementById("salesReportsToggle");
+    if(reportsNav){
+      reportsNav.onclick=function(e){
+        e.preventDefault();
+        const open=submenu.style.display==="block";
+        submenu.style.display=open?"none":"block";
+        toggle.textContent=open?"+":"-";
+        showPage("reports");
+      };
+    }
+    document.querySelectorAll(".portal-nav-item").forEach(item=>{
+      item.onclick=function(e){e.preventDefault();showPage("portal:"+item.dataset.portal);};
+    });
+    const salesNav=document.getElementById("salesOverviewNav");
+    if(salesNav) salesNav.onclick=()=>showPage("sales");
+    const demandNav=document.getElementById("demandNav");
+    if(demandNav) demandNav.onclick=()=>showPage("demand");
+    try{
+      const cached=JSON.parse(localStorage.getItem("amazonBackendScanCache")||"{}");
+      if(cached&&cached.files)portalState=cached;
+    }catch(e){}
+    showPage("reports");
+  }
+
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",initBackendPortal);
+  else initBackendPortal();
 })();
 </script>
 
