@@ -762,20 +762,34 @@ bindSalesEvents();bindDemandEvents();setProgress(0,'Loading saved data...');if(!
 (function(){
   const APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxMD_hUnXptItPoU8MlJJfnTk6t4HIiX5cuNXhbHvISGkSinbuzR83rRWCgoNiKrIyjLg/exec";
   const AMAZON_FOLDER_ID="1VL60pbxPrZKTFwX0IPHwV4Ddpahu8IHh";
-  let scanState={files:[],rows:[],summary:{fileCount:0,totalRows:0,saleQty:0,returnQty:0,saleAmt:0,returnAmt:0},status:"Ready. Click Scan Drive.",scanning:false,progress:{done:0,total:0,percent:0,current:""}};
+  let state={
+    files:[],
+    rows:[],
+    summary:{fileCount:0,totalRows:0,saleQty:0,returnQty:0,saleAmt:0,returnAmt:0},
+    status:"Loading saved scan data...",
+    scanning:false,
+    progress:{done:0,total:0,percent:0,current:"",newFiles:0,modifiedFiles:0,skippedFiles:0,deletedFiles:0}
+  };
 
   function money(n){return "₹"+new Intl.NumberFormat("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n||0));}
   function num(n){return new Intl.NumberFormat("en-IN").format(Number(n||0));}
   function safe(v){return String(v??"").replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s]));}
-  function addSummary(a,b){a.fileCount+=Number(b.fileCount||0);a.totalRows+=Number(b.totalRows||0);a.saleQty+=Number(b.saleQty||0);a.returnQty+=Number(b.returnQty||0);a.saleAmt+=Number(b.saleAmt||0);a.returnAmt+=Number(b.returnAmt||0);}
+
   async function backend(action,params={}){
-    const url=new URL(APPS_SCRIPT_URL);url.searchParams.set("action",action);url.searchParams.set("folderId",AMAZON_FOLDER_ID);Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
-    const res=await fetch(url.toString(),{cache:"no-store"}); if(!res.ok)throw new Error("Apps Script HTTP "+res.status);
-    const data=await res.json(); if(!data.ok)throw new Error(data.error||"Apps Script error"); return data;
+    const url=new URL(APPS_SCRIPT_URL);
+    url.searchParams.set("action",action);
+    url.searchParams.set("folderId",AMAZON_FOLDER_ID);
+    Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
+    const res=await fetch(url.toString(),{cache:"no-store"});
+    if(!res.ok)throw new Error("Apps Script HTTP "+res.status);
+    const data=await res.json();
+    if(!data.ok)throw new Error(data.error||"Apps Script error");
+    return data;
   }
+
   function ensureCss(){
-    if(document.getElementById("progressPortalCss"))return;
-    const st=document.createElement("style");st.id="progressPortalCss";st.textContent=`
+    if(document.getElementById("incrementalPortalCss"))return;
+    const st=document.createElement("style");st.id="incrementalPortalCss";st.textContent=`
       .portal-title{font-family:"Cormorant Garamond",serif;font-size:1.45rem;color:var(--teal-dark);font-weight:700;margin-bottom:1rem}
       .portal-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.3rem}
       .portal-card{border-radius:12px;padding:1.1rem 1.25rem;color:#fff;box-shadow:var(--shadow)}
@@ -788,69 +802,158 @@ bindSalesEvents();bindDemandEvents();setProgress(0,'Loading saved data...');if(!
       .scan-progress-top{display:flex;justify-content:space-between;gap:1rem;font-size:.8rem;font-weight:700;color:var(--teal-dark);margin-bottom:.55rem;flex-wrap:wrap}
       .scan-progress-track{height:10px;background:#e9e4d8;border-radius:999px;overflow:hidden}
       .scan-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--teal));transition:width .25s ease}
+      .progress-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-top:.75rem}
+      .progress-stat{background:#faf8f4;border:1px solid var(--border);border-radius:8px;padding:.55rem;text-align:center;font-size:.72rem;color:var(--muted);font-weight:700}
+      .progress-stat b{display:block;color:var(--teal-dark);font-size:1rem}
       .status-pill{border-radius:999px;padding:3px 8px;font-weight:700;font-size:.68rem;display:inline-block}
-      .status-loaded{background:#c6f6d5;color:#0d5c4a}.status-pending{background:#fff0bf;color:#8a5a00}.status-error{background:#ffd4d4;color:#8f1d1d}
+      .status-loaded{background:#c6f6d5;color:#0d5c4a}.status-pending{background:#fff0bf;color:#8a5a00}.status-error{background:#ffd4d4;color:#8f1d1d}.status-skip{background:#e9eef5;color:#44556b}
       .type-pill{background:#efe6ff;color:#6a38b4;border-radius:999px;padding:3px 8px;font-size:.68rem;font-weight:700}
-      @media(max-width:1200px){.portal-summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:860px){.portal-summary{grid-template-columns:1fr}}
+      @media(max-width:1200px){.portal-summary{grid-template-columns:repeat(2,1fr)}.progress-stats{grid-template-columns:repeat(2,1fr)}}
+      @media(max-width:860px){.portal-summary,.progress-stats{grid-template-columns:1fr}}
     `;document.head.appendChild(st);
   }
+
   function ensurePages(){
     const content=document.querySelector(".content"); if(!content)return;
     if(!document.getElementById("sales-reports-page")){const d=document.createElement("div");d.id="sales-reports-page";content.insertBefore(d,content.firstChild);}
     if(!document.getElementById("portal-page")){const d=document.createElement("div");d.id="portal-page";d.style.display="none";content.insertBefore(d,document.getElementById("sales-reports-page").nextSibling);}
   }
+
   function ensureNav(){
     let reports=document.getElementById("salesReportsNav")||[...document.querySelectorAll(".nav-item")].find(n=>n.textContent.includes("Sales Reports"));
-    if(reports){reports.id="salesReportsNav";reports.innerHTML='<span>🛒</span> Sales Reports <span class="nav-badge" id="salesReportsToggle">+</span>';let sub=document.getElementById("salesReportsSubmenu");if(!sub){sub=document.createElement("div");sub.id="salesReportsSubmenu";reports.insertAdjacentElement("afterend",sub);}sub.style.display="none";sub.innerHTML='<div class="nav-item portal-nav-item" data-portal="amazon" style="padding-left:2rem;">Amazon</div><div class="nav-item portal-nav-item" data-portal="flipkart" style="padding-left:2rem;">Flipkart</div><div class="nav-item portal-nav-item" data-portal="myntra" style="padding-left:2rem;">Myntra</div><div class="nav-item portal-nav-item" data-portal="meesho" style="padding-left:2rem;">Meesho</div><div class="nav-item portal-nav-item" data-portal="ajio" style="padding-left:2rem;">Ajio</div><div class="nav-item portal-nav-item" data-portal="limeroad" style="padding-left:2rem;">Limeroad</div><div class="nav-item portal-nav-item" data-portal="tata" style="padding-left:2rem;">Tata</div><div class="nav-item portal-nav-item" data-portal="nykaa" style="padding-left:2rem;">Nykaa</div><div class="nav-item portal-nav-item" data-portal="snapdeal" style="padding-left:2rem;">Snapdeal</div><div class="nav-item portal-nav-item" data-portal="website" style="padding-left:2rem;">Website</div><div class="nav-item portal-nav-item" data-portal="b2c" style="padding-left:2rem;">B2C</div>';reports.onclick=e=>{e.preventDefault();const open=sub.style.display==="block";sub.style.display=open?"none":"block";document.getElementById("salesReportsToggle").textContent=open?"+":"-";showPage("reports");};}
+    if(reports){
+      reports.id="salesReportsNav";
+      reports.innerHTML='<span>🛒</span> Sales Reports <span class="nav-badge" id="salesReportsToggle">+</span>';
+      let sub=document.getElementById("salesReportsSubmenu");
+      if(!sub){sub=document.createElement("div");sub.id="salesReportsSubmenu";reports.insertAdjacentElement("afterend",sub);}
+      sub.style.display="none";
+      sub.innerHTML='<div class="nav-item portal-nav-item" data-portal="amazon" style="padding-left:2rem;">Amazon</div><div class="nav-item portal-nav-item" data-portal="flipkart" style="padding-left:2rem;">Flipkart</div><div class="nav-item portal-nav-item" data-portal="myntra" style="padding-left:2rem;">Myntra</div><div class="nav-item portal-nav-item" data-portal="meesho" style="padding-left:2rem;">Meesho</div><div class="nav-item portal-nav-item" data-portal="ajio" style="padding-left:2rem;">Ajio</div><div class="nav-item portal-nav-item" data-portal="limeroad" style="padding-left:2rem;">Limeroad</div><div class="nav-item portal-nav-item" data-portal="tata" style="padding-left:2rem;">Tata</div><div class="nav-item portal-nav-item" data-portal="nykaa" style="padding-left:2rem;">Nykaa</div><div class="nav-item portal-nav-item" data-portal="snapdeal" style="padding-left:2rem;">Snapdeal</div><div class="nav-item portal-nav-item" data-portal="website" style="padding-left:2rem;">Website</div><div class="nav-item portal-nav-item" data-portal="b2c" style="padding-left:2rem;">B2C</div>';
+      reports.onclick=e=>{e.preventDefault();const open=sub.style.display==="block";sub.style.display=open?"none":"block";document.getElementById("salesReportsToggle").textContent=open?"+":"-";showPage("reports");};
+    }
     document.querySelectorAll(".portal-nav-item").forEach(i=>i.onclick=e=>{e.preventDefault();showPage("portal:"+i.dataset.portal);});
     const sales=document.getElementById("salesOverviewNav"); if(sales)sales.onclick=()=>showPage("sales");
     const demand=document.getElementById("demandNav"); if(demand)demand.onclick=()=>showPage("demand");
   }
+
+  function statusClass(status){
+    const s=String(status||"").toLowerCase();
+    if(s.includes("error"))return "status-error";
+    if(s.includes("skip")||s.includes("unchanged"))return "status-skip";
+    if(s.includes("pending"))return "status-pending";
+    return "status-loaded";
+  }
+
   function renderAmazon(){
     ensureCss(); const p=document.getElementById("portal-page"); if(!p)return;
-    const s=scanState.summary, files=scanState.files, rows=scanState.rows, pr=scanState.progress;
+    const s=state.summary||{}, files=state.files||[], rows=state.rows||[], pr=state.progress||{};
     p.innerHTML=`
       <div class="portal-title">🛍️ Portal Sale (Amazon)</div>
       <div class="portal-summary">
         <div class="portal-card portal-green"><div class="small">Sale</div><div class="big">${num(s.saleQty)}</div><div class="sub">units</div><hr style="border-color:rgba(255,255,255,.2)"><div class="big" style="font-size:1.1rem">${money(s.saleAmt)}</div></div>
         <div class="portal-card portal-red"><div class="small">Return</div><div class="big">${num(s.returnQty)}</div><div class="sub">units</div><hr style="border-color:rgba(255,255,255,.2)"><div class="big" style="font-size:1.1rem">${money(s.returnAmt)}</div></div>
         <div class="portal-card portal-orange"><div class="small">Net Sale</div><div class="big">${num((s.saleQty||0)-(s.returnQty||0))}</div><div class="sub">net units</div><hr style="border-color:rgba(255,255,255,.2)"><div class="big" style="font-size:1.1rem">${money((s.saleAmt||0)-(s.returnAmt||0))}</div></div>
-        <div class="portal-card portal-blue"><div class="small">Files / Rows</div><div class="big">${num(s.fileCount||files.length)}</div><div class="sub">${num(s.totalRows)} rows scanned</div></div>
+        <div class="portal-card portal-blue"><div class="small">Saved Files / Rows</div><div class="big">${num(s.fileCount||files.length)}</div><div class="sub">${num(s.totalRows)} rows saved</div></div>
       </div>
-      <div class="card"><div class="card-head"><span class="card-head-title">📁 Portal Sale Files</span><div class="portal-actions"><button class="btn btn-primary" id="scanDriveBtn" ${scanState.scanning?"disabled":""}>🔄 Scan Drive</button><button class="btn btn-gold" id="loadRowsBtn" ${scanState.scanning?"disabled":""}>Load Latest Rows</button></div></div>
+      <div class="card"><div class="card-head"><span class="card-head-title">📁 Incremental Drive Scan</span><div class="portal-actions"><button class="btn btn-primary" id="scanDriveBtn" ${state.scanning?"disabled":""}>🔄 Scan Drive</button><button class="btn btn-gold" id="refreshSavedBtn" ${state.scanning?"disabled":""}>Load Saved</button><button class="btn btn-gold" id="loadRowsBtn" ${state.scanning?"disabled":""}>Load Rows</button></div></div>
       <div class="card-body">
-        <div class="scan-progress-wrap"><div class="scan-progress-top"><span>${safe(scanState.status)}</span><span>${num(pr.done)} / ${num(pr.total)} files · ${Math.round(pr.percent)}%</span></div><div class="scan-progress-track"><div class="scan-progress-fill" style="width:${Math.max(0,Math.min(100,pr.percent))}%"></div></div><div class="footer-note">${pr.current?"Current: "+safe(pr.current):"Progress updates after every file."}</div></div>
-        <div class="table-wrap" style="max-height:360px;"><table><thead><tr><th>Portal</th><th>Year</th><th>File</th><th>Type</th><th>Month/Year</th><th>Rows</th><th>Size MB</th><th>Modified</th><th>Status</th></tr></thead><tbody>${files.length?files.map(f=>`<tr><td>Amazon</td><td>${safe(f.year)}</td><td>${safe(f.name)}</td><td><span class="type-pill">${safe(f.type)}</span></td><td>${safe(f.monthYear)}</td><td>${num(f.rows)}</td><td>${safe(f.sizeMb)}</td><td>${safe(f.modified)}</td><td><span class="status-pill ${String(f.status).includes("Error")?"status-error":String(f.status).includes("Pending")?"status-pending":"status-loaded"}">${safe(f.status)}</span></td></tr>`).join(""):'<tr><td colspan="9">Click Scan Drive. Progress bar will show 0% to 100%.</td></tr>'}</tbody></table></div>
+        <div class="scan-progress-wrap">
+          <div class="scan-progress-top"><span>${safe(state.status)}</span><span>${num(pr.done||0)} / ${num(pr.total||0)} changed files · ${Math.round(pr.percent||0)}%</span></div>
+          <div class="scan-progress-track"><div class="scan-progress-fill" style="width:${Math.max(0,Math.min(100,pr.percent||0))}%"></div></div>
+          <div class="footer-note">${pr.current?"Current: "+safe(pr.current):"Open page loads saved data. Scan Drive processes only new/modified files."}</div>
+          <div class="progress-stats">
+            <div class="progress-stat"><b>${num(pr.newFiles||0)}</b>New</div>
+            <div class="progress-stat"><b>${num(pr.modifiedFiles||0)}</b>Modified</div>
+            <div class="progress-stat"><b>${num(pr.skippedFiles||0)}</b>Skipped Old</div>
+            <div class="progress-stat"><b>${num(pr.deletedFiles||0)}</b>Deleted</div>
+          </div>
+        </div>
+        <div class="table-wrap" style="max-height:360px;"><table><thead><tr><th>Portal</th><th>Year</th><th>File</th><th>Type</th><th>Month/Year</th><th>Rows</th><th>Sale Qty</th><th>Return Qty</th><th>Size MB</th><th>Modified</th><th>Status</th></tr></thead><tbody>${files.length?files.map(f=>`<tr><td>Amazon</td><td>${safe(f.year)}</td><td>${safe(f.name)}</td><td><span class="type-pill">${safe(f.type)}</span></td><td>${safe(f.monthYear)}</td><td>${num(f.rows)}</td><td>${num(f.saleQty)}</td><td>${num(f.returnQty)}</td><td>${safe(f.sizeMb)}</td><td>${safe(f.modified)}</td><td><span class="status-pill ${statusClass(f.status)}">${safe(f.status)}</span></td></tr>`).join(""):'<tr><td colspan="11">No saved scan data yet. Click Scan Drive once.</td></tr>'}</tbody></table></div>
       </div></div>
-      <div class="card"><div class="card-head"><span class="card-head-title">📊 Portal Sale Data</span><button class="btn btn-gold" id="exportRowsBtn">Export CSV</button></div><div class="card-body"><div class="table-wrap" style="max-height:520px;"><table><thead><tr><th>#</th><th>Portal</th><th>File</th><th>Type</th><th>Transaction</th><th>SKU</th><th>Invoice Date</th><th>Qty</th><th>Invoice Amt</th><th>Taxable Value</th><th>Fulfillment</th></tr></thead><tbody>${rows.length?rows.map((r,i)=>`<tr><td>${i+1}</td><td>Amazon</td><td>${safe(r.fileName)}</td><td>${safe(r.fileType)}</td><td>${safe(r.transactionType)}</td><td>${safe(r.sku)}</td><td>${safe(r.invoiceDate)}</td><td>${safe(r.qty)}</td><td>${money(r.invoiceAmt)}</td><td>${money(r.taxableValue)}</td><td>${safe(r.fulfillment)}</td></tr>`).join(""):'<tr><td colspan="11">No rows loaded yet.</td></tr>'}</tbody></table></div></div></div>
+      <div class="card"><div class="card-head"><span class="card-head-title">📊 Saved Sample Rows</span><button class="btn btn-gold" id="exportRowsBtn">Export CSV</button></div><div class="card-body"><div class="table-wrap" style="max-height:520px;"><table><thead><tr><th>#</th><th>Portal</th><th>File</th><th>Type</th><th>Transaction</th><th>SKU</th><th>Invoice Date</th><th>Qty</th><th>Invoice Amt</th><th>Taxable Value</th><th>Fulfillment</th></tr></thead><tbody>${rows.length?rows.map((r,i)=>`<tr><td>${i+1}</td><td>Amazon</td><td>${safe(r.fileName)}</td><td>${safe(r.fileType)}</td><td>${safe(r.transactionType)}</td><td>${safe(r.sku)}</td><td>${safe(r.invoiceDate)}</td><td>${safe(r.qty)}</td><td>${money(r.invoiceAmt)}</td><td>${money(r.taxableValue)}</td><td>${safe(r.fulfillment)}</td></tr>`).join(""):'<tr><td colspan="11">Click Load Rows for latest sample rows.</td></tr>'}</tbody></table></div></div></div>
     `;
-    document.getElementById("scanDriveBtn").onclick=scanDrive;
+    document.getElementById("scanDriveBtn").onclick=incrementalScan;
+    document.getElementById("refreshSavedBtn").onclick=loadSaved;
     document.getElementById("loadRowsBtn").onclick=loadRows;
     document.getElementById("exportRowsBtn").onclick=exportRows;
   }
-  async function scanDrive(){
+
+  async function loadSaved(){
     try{
-      scanState={files:[],rows:[],summary:{fileCount:0,totalRows:0,saleQty:0,returnQty:0,saleAmt:0,returnAmt:0},status:"Finding files in Google Drive...",scanning:true,progress:{done:0,total:0,percent:0,current:"Listing files..."}};
+      state.status="Loading saved scan data from server...";
       renderAmazon();
-      const listed=await backend("listAmazonFiles");
-      scanState.files=(listed.files||[]).map(f=>Object.assign(f,{status:"Pending",rows:0})); scanState.summary.fileCount=scanState.files.length; scanState.progress.total=scanState.files.length; scanState.status="Processing files one by one..."; renderAmazon();
-      for(let i=0;i<scanState.files.length;i++){
-        const f=scanState.files[i]; scanState.progress.current=f.name; scanState.status=`Processing ${i+1} of ${scanState.files.length}`; renderAmazon();
-        const done=await backend("processAmazonFiles",{fileIds:f.id});
-        (done.files||[]).forEach(df=>{const idx=scanState.files.findIndex(x=>x.id===df.id); if(idx>=0)scanState.files[idx]=df;});
-        addSummary(scanState.summary,done.summary||{});
-        scanState.progress.done=i+1; scanState.progress.percent=scanState.files.length?((i+1)/scanState.files.length*100):100; scanState.status=`${i+1} / ${scanState.files.length} files processed`; localStorage.setItem("amazonProgressScan",JSON.stringify(scanState)); renderAmazon();
+      const data=await backend("getAmazonSaved");
+      state.files=data.files||[];
+      state.summary=data.summary||{fileCount:0,totalRows:0,saleQty:0,returnQty:0,saleAmt:0,returnAmt:0};
+      state.progress=data.progress||state.progress;
+      state.status=state.files.length?"Saved scan data loaded.":"No saved scan data yet. Click Scan Drive once.";
+      localStorage.setItem("amazonSavedScanMirror",JSON.stringify(state));
+      renderAmazon();
+    }catch(e){state.status="Error: "+e.message;renderAmazon();}
+  }
+
+  async function incrementalScan(){
+    try{
+      state.scanning=true;
+      state.rows=[];
+      state.status="Checking Drive for new/modified/deleted files...";
+      state.progress={done:0,total:0,percent:0,current:"Comparing Drive with saved index...",newFiles:0,modifiedFiles:0,skippedFiles:0,deletedFiles:0};
+      renderAmazon();
+
+      const start=await backend("startAmazonIncrementalScan");
+      const token=start.token;
+      state.files=start.files||[];
+      state.summary=start.summary||state.summary;
+      state.progress.total=start.toProcessCount||0;
+      state.progress.newFiles=start.newFiles||0;
+      state.progress.modifiedFiles=start.modifiedFiles||0;
+      state.progress.skippedFiles=start.skippedFiles||0;
+      state.progress.deletedFiles=start.deletedFiles||0;
+      state.status=start.toProcessCount?`Found ${start.toProcessCount} changed files. Processing...`:"No new or modified files. Saved data is already latest.";
+      renderAmazon();
+
+      if(!start.toProcessCount){
+        state.scanning=false;
+        state.progress.percent=100;
+        await loadSaved();
+        return;
       }
-      scanState.scanning=false; scanState.progress.current=""; scanState.status=`Scan completed · ${scanState.progress.done} / ${scanState.progress.total} files processed`; localStorage.setItem("amazonProgressScan",JSON.stringify(scanState)); renderAmazon();
-    }catch(e){scanState.scanning=false;scanState.status="Error: "+e.message;renderAmazon();}
+
+      let done=false;
+      while(!done){
+        const step=await backend("processAmazonIncrementalBatch",{token:token,batchSize:1});
+        state.files=step.files||state.files;
+        state.summary=step.summary||state.summary;
+        state.progress.done=step.done||0;
+        state.progress.total=step.total||state.progress.total;
+        state.progress.percent=state.progress.total?state.progress.done/state.progress.total*100:100;
+        state.progress.current=step.current||"";
+        state.progress.newFiles=start.newFiles||0;
+        state.progress.modifiedFiles=start.modifiedFiles||0;
+        state.progress.skippedFiles=start.skippedFiles||0;
+        state.progress.deletedFiles=start.deletedFiles||0;
+        state.status=`${state.progress.done} / ${state.progress.total} changed files processed`;
+        done=!!step.finished;
+        renderAmazon();
+      }
+
+      state.scanning=false;
+      state.progress.current="";
+      state.progress.percent=100;
+      state.status=`Incremental scan completed · ${state.progress.done} / ${state.progress.total} changed files processed`;
+      await loadSaved();
+    }catch(e){state.scanning=false;state.status="Error: "+e.message;renderAmazon();}
   }
+
   async function loadRows(){
-    try{scanState.status="Loading sample rows...";renderAmazon();const d=await backend("rowsAmazon",{limit:500});scanState.rows=d.rows||[];scanState.status=`Loaded ${scanState.rows.length} sample rows`;renderAmazon();}
-    catch(e){scanState.status="Error: "+e.message;renderAmazon();}
+    try{state.status="Loading sample rows from current Drive files...";renderAmazon();const d=await backend("rowsAmazon",{limit:500});state.rows=d.rows||[];state.status=`Loaded ${state.rows.length} sample rows`;renderAmazon();}
+    catch(e){state.status="Error: "+e.message;renderAmazon();}
   }
-  function exportRows(){const rows=scanState.rows||[];if(!rows.length){alert("No rows loaded");return;}const headers=["fileName","fileType","transactionType","sku","invoiceDate","qty","invoiceAmt","taxableValue","fulfillment"];const csv=[headers.join(",")].concat(rows.map(r=>headers.map(h=>`"${String(r[h]??"").replace(/"/g,'""')}"`).join(","))).join("\n");const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="amazon_loaded_rows.csv";a.click();URL.revokeObjectURL(url);}
-  window.showPage=function(page){ensurePages();const sales=document.getElementById("sales-page"),demand=document.getElementById("demand-page"),reports=document.getElementById("sales-reports-page"),portal=document.getElementById("portal-page"),fetchBtn=document.getElementById("fetchBtn");const isSales=page==="sales",isDemand=page==="demand",isReports=page==="reports",isPortal=page&&page.startsWith("portal:");if(sales)sales.style.display=isSales?"block":"none";if(demand)demand.style.display=isDemand?"block":"none";if(reports)reports.style.display=isReports?"block":"none";if(portal)portal.style.display=isPortal?"block":"none";if(fetchBtn)fetchBtn.style.display=isSales?"inline-block":"none";document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));const rn=document.getElementById("salesReportsNav"),sn=document.getElementById("salesOverviewNav"),dn=document.getElementById("demandNav");if(isReports&&rn)rn.classList.add("active");if(isSales&&sn)sn.classList.add("active");if(isDemand&&dn)dn.classList.add("active");document.querySelectorAll(".portal-nav-item").forEach(i=>i.classList.toggle("active",isPortal&&i.dataset.portal===page.replace("portal:","")));if(isReports&&reports)reports.innerHTML="";if(isPortal){if(page.replace("portal:","")==="amazon")renderAmazon();else if(portal)portal.innerHTML="";}};
-  function init(){ensureCss();ensurePages();ensureNav();try{const c=JSON.parse(localStorage.getItem("amazonProgressScan")||"{}");if(c&&c.files){scanState=c;scanState.scanning=false;}}catch(e){}showPage("reports");}
+
+  function exportRows(){const rows=state.rows||[];if(!rows.length){alert("No rows loaded");return;}const headers=["fileName","fileType","transactionType","sku","invoiceDate","qty","invoiceAmt","taxableValue","fulfillment"];const csv=[headers.join(",")].concat(rows.map(r=>headers.map(h=>`"${String(r[h]??"").replace(/"/g,'""')}"`).join(","))).join("\n");const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="amazon_loaded_rows.csv";a.click();URL.revokeObjectURL(url);}
+
+  window.showPage=function(page){ensurePages();const sales=document.getElementById("sales-page"),demand=document.getElementById("demand-page"),reports=document.getElementById("sales-reports-page"),portal=document.getElementById("portal-page"),fetchBtn=document.getElementById("fetchBtn");const isSales=page==="sales",isDemand=page==="demand",isReports=page==="reports",isPortal=page&&page.startsWith("portal:");if(sales)sales.style.display=isSales?"block":"none";if(demand)demand.style.display=isDemand?"block":"none";if(reports)reports.style.display=isReports?"block":"none";if(portal)portal.style.display=isPortal?"block":"none";if(fetchBtn)fetchBtn.style.display=isSales?"inline-block":"none";document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));const rn=document.getElementById("salesReportsNav"),sn=document.getElementById("salesOverviewNav"),dn=document.getElementById("demandNav");if(isReports&&rn)rn.classList.add("active");if(isSales&&sn)sn.classList.add("active");if(isDemand&&dn)dn.classList.add("active");document.querySelectorAll(".portal-nav-item").forEach(i=>i.classList.toggle("active",isPortal&&i.dataset.portal===page.replace("portal:","")));if(isReports&&reports)reports.innerHTML="";if(isPortal){if(page.replace("portal:","")==="amazon"){renderAmazon();loadSaved();}else if(portal)portal.innerHTML="";}};
+
+  function init(){ensureCss();ensurePages();ensureNav();const fetchBtn=document.getElementById("fetchBtn");if(fetchBtn)fetchBtn.style.display="none";try{const c=JSON.parse(localStorage.getItem("amazonSavedScanMirror")||"{}");if(c&&c.files){state=c;state.scanning=false;}}catch(e){}showPage("reports");}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
 </script>
